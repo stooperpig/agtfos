@@ -1,0 +1,30 @@
+.status-bar {
+    min-height:30px;
+    background-color:black;
+
+    display:flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    align-content: stretch;
+    border-top: 1px solid grey;
+}
+
+.status-bar-current-turn {
+    padding-top:4px;
+    padding-left:4px;
+    padding-right:4px;
+    color:white;
+}
+
+.status-bar-flag {
+    border-right:1px solid grey;
+    padding-top:4px;
+    padding-right:4px;
+}
+
+.status-bar-flag img {
+
+    width:24px;
+    background-color:#888888;
+}

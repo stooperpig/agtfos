@@ -1,0 +1,61 @@
+.tool-bar {
+    min-height:30px;
+    background-color:black;
+    border-bottom: 1px solid darkgray;
+    border-top: 1px solid darkgray;
+
+    flex-shrink: 0;
+
+    display:flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-content: flex-start;
+}
+
+.tool-bar-button {
+    margin: 5px;
+    padding: 5px 5px;
+    text-align: center;
+    cursor: pointer;
+    outline: none;
+    background-color:#444444;
+    color:white;
+    border: 1px solid grey;
+    border-radius: 5px;
+    width:120px;
+    min-height: 45px;
+}
+
+.tool-bar-button-next {
+  margin: 5px 5px 5px auto;
+  padding: 5px 5px;
+  text-align: center;
+  cursor: pointer;
+  outline: none;
+  background-color:#444444;
+  color:white;
+  border: 1px solid grey;
+  border-radius: 5px;
+}
+
+.tool-bar-button-disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.tool-bar-button-hidden {
+  display:none;
+}
+
+.nextPhase-waiting-local {
+  background-color: yellow;
+  color:black;
+  animation: blinker 3s linear infinite;
+  cursor: pointer;
+}
+
+@keyframes blinker {
+  50% {
+      opacity: 0;
+  }
+}

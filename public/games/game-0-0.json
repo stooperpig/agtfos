@@ -1,0 +1,11 @@
+{
+    "id": 0,
+    "scenarioFile": "original",
+    "counters": {
+        "0": {
+            "id": 0,
+            "type": "1st-Officer"
+        }
+    },
+    "stacks": {}
+}

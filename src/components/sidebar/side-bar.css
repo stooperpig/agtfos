@@ -1,0 +1,33 @@
+.side-bar {
+    overflow:hidden;
+
+    display:flex;
+    flex-direction: column;
+    justify-content: stretch;
+    align-content: flex-start;
+
+    padding: 10px 10px 10px 10px;
+
+    border-right:1px solid grey;
+
+    min-width:140px;
+
+    color:white;
+    background-color:black;
+}
+
+.side-bar-header {
+    margin: 0px 0px 5px 0px;
+    text-align: left;
+    font-weight: bold;
+}
+
+.side-bar-counters {
+    flex-grow: 1;
+    overflow:auto;
+
+    display:flex;
+    flex-direction: column;
+    flex-wrap:nowrap;
+    align-content:flex-start;
+}

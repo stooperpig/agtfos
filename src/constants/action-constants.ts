@@ -1,1 +1,2 @@
 export const LOAD_GAME = 'LOAD_GAME';
+export const UPDATE_LOCATION = 'UPDATE_LOCATION';

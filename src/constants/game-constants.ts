@@ -1,6 +1,4 @@
-import { CounterTypeMap, ImageMap } from "../types/game-types";
-
-export const CounterTypeData: CounterTypeMap = {};
+import { ImageMap } from "../types/game-types";
 
 export const ImageData: ImageMap = {};
 

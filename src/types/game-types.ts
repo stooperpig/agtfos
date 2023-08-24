@@ -22,30 +22,45 @@ export interface Coord {
 export interface Counter {
     id: string,
     name?: string,
-    type: CounterType
-}
-
-export interface CounterMap {
-    [key: string]: Counter
-}
-
-export interface CounterType {
-    name: string,
+    type: CounterType,
+    state: CounterState,
+    weapon?: WeaponType,
     movementAllowance: number,
     attackDice: number,
     constitution: number,
     imageName: string
 }
 
-export interface CounterTypeMap {
-    [key: string]: CounterType
+export enum CounterType {
+    CREW = 'CREW',
+    ROBOT = 'ROBOT',
+    EGG = 'EGG',
+    BABY = 'BABY',
+    ADULT = 'ADULT',
+    FRAGMENT = 'FRAGMENT'
+}
+
+export interface CounterMap {
+    [key: string]: Counter
+}
+
+export enum CounterState {
+    NORMAL = 'NORMAL',
+    STUNNED = 'STUNNED'
 }
 
 export interface GameState {
     id: number,
+    phase: Phase,
+    currentPlayerId: number,
+    phasingPlayerId: number,
+    players: Player[],
+    scale: number,
     scenarioFile?: string,
     counters: CounterMap,
-    stacks: StackMap
+    nextCounterId: number,
+    stacks: StackMap,
+    locationMap?: LocationMap
 }
 
 export interface Image {
@@ -63,12 +78,30 @@ export interface Location {
     apertures: Aperture[],
     polygon: Polygon,
     crewStackId: string,
-    monsterStackId: string
+    crewStackPolygon: Polygon,
+    monsterStackId: string,
+    monsterStackPolygon: Polygon,
     weaponStackIds: string[]
+    weaponStackPolygons: Polygon[]
 }
 
 export interface LocationMap {
-    [key:string]: Location
+    [key: string]: Location
+}
+
+export enum Phase {
+    SETUP = "SETUP",
+    GROW = "GROW",
+    MOVE = "MOVE",
+    ATTACK = "ATTACK",
+    WAKE_UP = "WAKE_UP",
+    GRAB_WEAPONS = "GRAB_WEAPONS"
+}
+
+export interface Player {
+    id: number,
+    name: string,
+    teamType: TeamType
 }
 
 export type Polygon = Coord[];
@@ -78,14 +111,34 @@ export interface Scenario {
     name: string,
     board: Board,
     imageMap: ImageMap,
-    counterTypes: CounterTypeMap
 }
 
 export interface Stack {
-    coord: Coord,
-    counters: Counter[]
+    id: string,
+    locationId: string,
+    counterIds: string[]
 }
 
 export interface StackMap {
     [key: string]: Stack
+}
+
+export enum TeamType {
+    CREW = "CREW",
+    MONSTER = "MONSTER"
+}
+
+export enum WeaponType {
+    BOTTLE_OF_ACID,
+    CANNISTER_OF_ZGWORTZ,
+    COMMUNICATIONS_BEAMER,
+    ELECTRIC_FENCE,
+    FIRE_EXTINGUSHER,
+    GAS_GRENADE,
+    HYPODERMIC,
+    KNIVE,
+    POOL_STICK,
+    CAN_OF_ROCKET_FUEL,
+    STUN_PISTOL,
+    WELDING_TORCH
 }

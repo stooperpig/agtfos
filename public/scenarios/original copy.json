@@ -1,0 +1,1221 @@
+{
+  "id": "original",
+  "name": "original",
+  "board": {
+    "imageName": "board",
+    "locationMap": {
+      "1": {
+        "id": "1",
+        "name": "#1 Sensor",
+        "apertures": [
+          {
+            "type": "DOOR",
+            "locationId": "22",
+            "losLocationIds": [
+              "22",
+              "42",
+              "43"
+            ]
+          }
+        ],
+        "polygon": [],
+        "crewStackId": "1-1",
+        "monsterStackId": "1-2",
+        "weaponStackIds": []
+      },
+      "2": {
+        "id": "2",
+        "name": "Crew's Quarters",
+        "apertures": [
+          {
+            "type": "DOOR",
+            "locationId": "22",
+            "losLocationIds": [
+              "22",
+              "42",
+              "43"
+            ]
+          }
+        ],
+        "polygon": [],
+        "crewStackId": "2-1",
+        "monsterStackId": "2-2",
+        "weaponStackIds": []
+      },
+      "3": {
+        "id": "3",
+        "name": "Captain's Cabin",
+        "apertures": [
+          {
+            "type": "DOOR",
+            "locationId": "23",
+            "losLocationIds": []
+          },
+          {
+            "type": "DOOR",
+            "locationId": "4",
+            "losLocationIds": []
+          }
+        ],
+        "polygon": [],
+        "crewStackId": "3-1",
+        "monsterStackId": "3-2",
+        "weaponStackIds": []
+      },
+      "4": {
+        "id": "4",
+        "name": "#1 Bridge",
+        "apertures": [
+          {
+            "type": "DOOR",
+            "locationId": "24",
+            "losLocationIds": []
+          },
+          {
+            "type": "DOOR",
+            "locationId": "3",
+            "losLocationIds": []
+          },
+          {
+            "type": "DOOR",
+            "locationId": "5",
+            "losLocationIds": [
+              "5",
+              "26"
+            ]
+          }
+        ],
+        "polygon": [],
+        "crewStackId": "4-1",
+        "monsterStackId": "4-2",
+        "weaponStackIds": []
+      },
+      "5": {
+        "id": "5",
+        "name": "Hallway",
+        "apertures": [
+          {
+            "type": "DOOR",
+            "locationId": "4",
+            "losLocationIds": []
+          },
+          {
+            "type": "DOOR",
+            "locationId": "6",
+            "losLocationIds": []
+          },
+          {
+            "type": "DOOR",
+            "locationId": "26",
+            "losLocationIds": []
+          }
+        ],
+        "polygon": [],
+        "crewStackId": "5-1",
+        "monsterStackId": "5-2",
+        "weaponStackIds": []
+      },
+      "6": {
+        "id": "6",
+        "name": "Main Cargo Hold",
+        "apertures": [
+          {
+            "type": "DOOR",
+            "locationId": "5",
+            "losLocationIds": [
+              "5",
+              "26"
+            ]
+          },
+          {
+            "type": "DOOR",
+            "locationId": "27",
+            "losLocationIds": []
+          },
+          {
+            "type": "DOOR",
+            "locationId": "28",
+            "losLocationIds": []
+          }
+        ],
+        "polygon": [],
+        "crewStackId": "6-1",
+        "monsterStackId": "6-2",
+        "weaponStackIds": []
+      },
+      "7": {
+        "id": "7",
+        "name": "#2 Bridge",
+        "apertures": [
+          {
+            "type": "DOOR",
+            "locationId": "29",
+            "losLocationIds": []
+          },
+          {
+            "type": "DOOR",
+            "locationId": "31",
+            "losLocationIds": [
+              "31",
+              "32"
+            ]
+          }
+        ],
+        "polygon": [],
+        "crewStackId": "7-1",
+        "monsterStackId": "7-2",
+        "weaponStackIds": []
+      },
+      "8": {
+        "id": "8",
+        "name": "Crew's Quarters",
+        "apertures": [
+          {
+            "type": "DOOR",
+            "locationId": "31",
+            "losLocationIds": [
+              "31",
+              "32"
+            ]
+          }
+        ],
+        "polygon": [],
+        "crewStackId": "8-1",
+        "monsterStackId": "8-2",
+        "weaponStackIds": []
+      },
+      "9": {
+        "id": "9",
+        "name": "Pool Room",
+        "apertures": [
+          {
+            "type": "DOOR",
+            "locationId": "11",
+            "losLocationIds": [
+              "11",
+              "32"
+            ]
+          }
+        ],
+        "polygon": [],
+        "crewStackId": "9-1",
+        "monsterStackId": "9-2",
+        "weaponStackIds": []
+      },
+      "10": {
+        "id": "10",
+        "name": "#1 Fuel Pod",
+        "apertures": [
+          {
+            "type": "DOOR",
+            "locationId": "11",
+            "losLocationIds": [
+              "11",
+              "32"
+            ]
+          }
+        ],
+        "polygon": [],
+        "crewStackId": "10-1",
+        "monsterStackId": "10-2",
+        "weaponStackIds": []
+      },
+      "11": {
+        "id": "11",
+        "name": "Hallway",
+        "apertures": [
+          {
+            "type": "DOOR",
+            "locationId": "9",
+            "losLocationIds": []
+          },
+          {
+            "type": "DOOR",
+            "locationId": "10",
+            "losLocationIds": []
+          },
+          {
+            "type": "DOOR",
+            "locationId": "32",
+            "losLocationIds": []
+          }
+        ],
+        "polygon": [],
+        "crewStackId": "11-1",
+        "monsterStackId": "11-2",
+        "weaponStackIds": []
+      },
+      "12": {
+        "id": "12",
+        "name": "Engine Room",
+        "apertures": [
+          {
+            "type": "DOOR",
+            "locationId": "11",
+            "losLocationIds": [
+              "11",
+              "32"
+            ]
+          },
+          {
+            "type": "DOOR",
+            "locationId": "33",
+            "losLocationIds": []
+          },
+          {
+            "type": "DOOR",
+            "locationId": "14",
+            "losLocationIds": [
+              "34",
+              "14"
+            ]
+          }
+        ],
+        "polygon": [],
+        "crewStackId": "12-1",
+        "monsterStackId": "12-2",
+        "weaponStackIds": []
+      },
+      "13": {
+        "id": "13",
+        "name": "#2 Fuel Pod",
+        "apertures": [
+          {
+            "type": "DOOR",
+            "locationId": "14",
+            "losLocationIds": [
+              "34",
+              "14"
+            ]
+          }
+        ],
+        "polygon": [],
+        "crewStackId": "13-1",
+        "monsterStackId": "132",
+        "weaponStackIds": []
+      },
+      "14": {
+        "id": "14",
+        "name": "Hallway",
+        "apertures": [
+          {
+            "type": "DOOR",
+            "locationId": "12",
+            "losLocationIds": []
+          },
+          {
+            "type": "DOOR",
+            "locationId": "13",
+            "losLocationIds": []
+          },
+          {
+            "type": "DOOR",
+            "locationId": "34",
+            "losLocationIds": []
+          },
+          {
+            "type": "DOOR",
+            "locationId": "15",
+            "losLocationIds": []
+          }
+        ],
+        "polygon": [],
+        "crewStackId": "14-1",
+        "monsterStackId": "14-2",
+        "weaponStackIds": []
+      },
+      "15": {
+        "id": "15",
+        "name": "Crew's Quarters",
+        "apertures": [
+          {
+            "type": "DOOR",
+            "locationId": "14",
+            "losLocationIds": [
+              "34",
+              "14"
+            ]
+          }
+        ],
+        "polygon": [],
+        "crewStackId": "15-1",
+        "monsterStackId": "15-2",
+        "weaponStackIds": []
+      },
+      "16": {
+        "id": "16",
+        "name": "#2 Sensor",
+        "apertures": [
+          {
+            "type": "DOOR",
+            "locationId": "35",
+            "losLocationIds": []
+          }
+        ],
+        "polygon": [],
+        "crewStackId": "16-1",
+        "monsterStackId": "16-2",
+        "weaponStackIds": []
+      },
+      "17": {
+        "id": "17",
+        "name": "Scout Bay",
+        "apertures": [
+          {
+            "type": "DOOR",
+            "locationId": "35",
+            "losLocationIds": []
+          },
+          {
+            "type": "DOOR",
+            "locationId": "18",
+            "losLocationIds": []
+          }
+        ],
+        "polygon": [],
+        "crewStackId": "17-1",
+        "monsterStackId": "17-2",
+        "weaponStackIds": []
+      },
+      "18": {
+        "id": "18",
+        "name": "Cockboat Bay",
+        "apertures": [
+          {
+            "type": "DOOR",
+            "locationId": "17",
+            "losLocationIds": []
+          },
+          {
+            "type": "DOOR",
+            "locationId": "38",
+            "losLocationIds": [
+              "38",
+              "44"
+            ]
+          },
+          {
+            "type": "DOOR",
+            "locationId": "19",
+            "losLocationIds": []
+          }
+        ],
+        "polygon": [],
+        "crewStackId": "18-1",
+        "monsterStackId": "18-2",
+        "weaponStackIds": []
+      },
+      "19": {
+        "id": "19",
+        "name": "Saucer Bay",
+        "apertures": [
+          {
+            "type": "DOOR",
+            "locationId": "18",
+            "losLocationIds": []
+          },
+          {
+            "type": "DOOR",
+            "locationId": "39",
+            "losLocationIds": []
+          },
+          {
+            "type": "DOOR",
+            "locationId": "40",
+            "losLocationIds": []
+          }
+        ],
+        "polygon": [],
+        "crewStackId": "19-1",
+        "monsterStackId": "19-2",
+        "weaponStackIds": []
+      },
+      "20": {
+        "id": "20",
+        "name": "Atmosphere Probe Launch",
+        "apertures": [
+          {
+            "type": "DOOR",
+            "locationId": "40",
+            "losLocationIds": []
+          },
+          {
+            "type": "DOOR",
+            "locationId": "21",
+            "losLocationIds": []
+          }
+        ],
+        "polygon": [],
+        "crewStackId": "20-1",
+        "monsterStackId": "20-2",
+        "weaponStackIds": []
+      },
+      "21": {
+        "id": "21",
+        "name": "Atmosphere Probe Control",
+        "apertures": [
+          {
+            "type": "DOOR",
+            "locationId": "20",
+            "losLocationIds": []
+          },
+          {
+            "type": "DOOR",
+            "locationId": "22",
+            "losLocationIds": [
+              "22",
+              "42",
+              "43"
+            ]
+          }
+        ],
+        "polygon": [],
+        "crewStackId": "21-1",
+        "monsterStackId": "21-2",
+        "weaponStackIds": []
+      },
+      "22": {
+        "id": "22",
+        "name": "Hallway",
+        "apertures": [
+          {
+            "type": "DOOR",
+            "locationId": "1",
+            "losLocationIds": []
+          },
+          {
+            "type": "DOOR",
+            "locationId": "42",
+            "losLocationIds": []
+          }
+        ],
+        "polygon": [],
+        "crewStackId": "22-1",
+        "monsterStackId": "22-2",
+        "weaponStackIds": []
+      },
+      "23": {
+        "id": "23",
+        "name": "Computer",
+        "apertures": [
+          {
+            "type": "DOOR",
+            "locationId": "3",
+            "losLocationIds": []
+          }
+        ],
+        "polygon": [],
+        "crewStackId": "23-1",
+        "monsterStackId": "23-2",
+        "weaponStackIds": []
+      },
+      "24": {
+        "id": "24",
+        "name": "Officer's Quarters",
+        "apertures": [
+          {
+            "type": "DOOR",
+            "locationId": "4",
+            "losLocationIds": []
+          },
+          {
+            "type": "DOOR",
+            "locationId": "42",
+            "losLocationIds": [
+              "22",
+              "42",
+              "43"
+            ]
+          }
+        ],
+        "polygon": [],
+        "crewStackId": "24-1",
+        "monsterStackId": "24-2",
+        "weaponStackIds": []
+      },
+      "25": {
+        "id": "25",
+        "name": "Wardroom",
+        "apertures": [
+          {
+            "type": "DOOR",
+            "locationId": "26",
+            "losLocationIds": [
+              "5",
+              "26"
+            ]
+          }
+        ],
+        "polygon": [],
+        "crewStackId": "25-1",
+        "monsterStackId": "25-2",
+        "weaponStackIds": []
+      },
+      "26": {
+        "id": "26",
+        "name": "Hallway",
+        "apertures": [
+          {
+            "type": "DOOR",
+            "locationId": "5",
+            "losLocationIds": []
+          },
+          {
+            "type": "DOOR",
+            "locationId": "25",
+            "losLocationIds": []
+          },
+          {
+            "type": "DOOR",
+            "locationId": "43",
+            "losLocationIds": [
+              "22",
+              "42",
+              "43"
+            ]
+          }
+        ],
+        "polygon": [],
+        "crewStackId": "26-1",
+        "monsterStackId": "26-2",
+        "weaponStackIds": []
+      },
+      "27": {
+        "id": "27",
+        "name": "Galley",
+        "apertures": [
+          {
+            "type": "DOOR",
+            "locationId": "6",
+            "losLocationIds": []
+          },
+          {
+            "type": "DOOR",
+            "locationId": "26",
+            "losLocationIds": [
+              "5",
+              "26"
+            ]
+          },
+          {
+            "type": "DOOR",
+            "locationId": "29",
+            "losLocationIds": []
+          }
+        ],
+        "polygon": [],
+        "crewStackId": "27-1",
+        "monsterStackId": "27-2",
+        "weaponStackIds": []
+      },
+      "28": {
+        "id": "28",
+        "name": "Ship's Store",
+        "apertures": [
+          {
+            "type": "DOOR",
+            "locationId": "6",
+            "losLocationIds": []
+          },
+          {
+            "type": "DOOR",
+            "locationId": "29",
+            "losLocationIds": []
+          }
+        ],
+        "polygon": [],
+        "crewStackId": "28-1",
+        "monsterStackId": "28-2",
+        "weaponStackIds": []
+      },
+      "29": {
+        "id": "29",
+        "name": "Mess Deck",
+        "apertures": [
+          {
+            "type": "DOOR",
+            "locationId": "28",
+            "losLocationIds": []
+          },
+          {
+            "type": "DOOR",
+            "locationId": "27",
+            "losLocationIds": []
+          },
+          {
+            "type": "DOOR",
+            "locationId": "7",
+            "losLocationIds": []
+          },
+          {
+            "type": "DOOR",
+            "locationId": "44",
+            "losLocationIds": [
+              "44",
+              "45"
+            ]
+          }
+        ],
+        "polygon": [],
+        "crewStackId": "29-1",
+        "monsterStackId": "29-2",
+        "weaponStackIds": []
+      },
+      "30": {
+        "id": "30",
+        "name": "Science Lab",
+        "apertures": [
+          {
+            "type": "DOOR",
+            "locationId": "45",
+            "losLocationIds": [
+              "44",
+              "45"
+            ]
+          }
+        ],
+        "polygon": [],
+        "crewStackId": "30-1",
+        "monsterStackId": "30-2",
+        "weaponStackIds": []
+      },
+      "31": {
+        "id": "31",
+        "name": "Hallway",
+        "apertures": [
+          {
+            "type": "DOOR",
+            "locationId": "7",
+            "losLocationIds": []
+          },
+          {
+            "type": "DOOR",
+            "locationId": "8",
+            "losLocationIds": []
+          },
+          {
+            "type": "DOOR",
+            "locationId": "32",
+            "losLocationIds": []
+          }
+        ],
+        "polygon": [],
+        "crewStackId": "31-1",
+        "monsterStackId": "31-2",
+        "weaponStackIds": []
+      },
+      "32": {
+        "id": "32",
+        "name": "Hallway",
+        "apertures": [
+          {
+            "type": "DOOR",
+            "locationId": "31",
+            "losLocationIds": []
+          },
+          {
+            "type": "DOOR",
+            "locationId": "11",
+            "losLocationIds": []
+          },
+          {
+            "type": "DOOR",
+            "locationId": "45",
+            "losLocationIds": [
+              "45",
+              "44"
+            ]
+          }
+        ],
+        "polygon": [],
+        "crewStackId": "32-1",
+        "monsterStackId": "32-2",
+        "weaponStackIds": []
+      },
+      "33": {
+        "id": "33",
+        "name": "Aft Machine Shop",
+        "apertures": [
+          {
+            "type": "DOOR",
+            "locationId": "12",
+            "losLocationIds": []
+          },
+          {
+            "type": "DOOR",
+            "locationId": "34",
+            "losLocationIds": [
+              "34",
+              "14"
+            ]
+          }
+        ],
+        "polygon": [],
+        "crewStackId": "33-1",
+        "monsterStackId": "33-2",
+        "weaponStackIds": []
+      },
+      "34": {
+        "id": "34",
+        "name": "Hallway",
+        "apertures": [
+          {
+            "type": "DOOR",
+            "locationId": "33",
+            "losLocationIds": []
+          },
+          {
+            "type": "DOOR",
+            "locationId": "35",
+            "losLocationIds": []
+          },
+          {
+            "type": "DOOR",
+            "locationId": "45",
+            "losLocationIds": [
+              "45",
+              "44"
+            ]
+          },
+          {
+            "type": "DOOR",
+            "locationId": "14",
+            "losLocationIds": []
+          }
+        ],
+        "polygon": [],
+        "crewStackId": "34-1",
+        "monsterStackId": "34-2",
+        "weaponStackIds": []
+      },
+      "35": {
+        "id": "35",
+        "name": "Crew's Quarters",
+        "apertures": [
+          {
+            "type": "DOOR",
+            "locationId": "34",
+            "losLocationIds": [
+              "34",
+              "14"
+            ]
+          },
+          {
+            "type": "DOOR",
+            "locationId": "16",
+            "losLocationIds": []
+          },
+          {
+            "type": "DOOR",
+            "locationId": "17",
+            "losLocationIds": []
+          }
+        ],
+        "polygon": [],
+        "crewStackId": "35-1",
+        "monsterStackId": "35-2",
+        "weaponStackIds": []
+      },
+      "36": {
+        "id": "36",
+        "name": "Hospital Ward",
+        "apertures": [
+          {
+            "type": "DOOR",
+            "locationId": "37",
+            "losLocationIds": []
+          }
+        ],
+        "polygon": [],
+        "crewStackId": "36-1",
+        "monsterStackId": "36-2",
+        "weaponStackIds": []
+      },
+      "37": {
+        "id": "37",
+        "name": "Sick Bay",
+        "apertures": [
+          {
+            "type": "DOOR",
+            "locationId": "36",
+            "losLocationIds": []
+          },
+          {
+            "type": "DOOR",
+            "locationId": "38",
+            "losLocationIds": [
+              "38",
+              "44"
+            ]
+          },
+          {
+            "type": "DOOR",
+            "locationId": "44",
+            "losLocationIds": [
+              "44",
+              "45"
+            ]
+          }
+        ],
+        "polygon": [],
+        "crewStackId": "37-1",
+        "monsterStackId": "37-2",
+        "weaponStackIds": []
+      },
+      "38": {
+        "id": "38",
+        "name": "Hallway",
+        "apertures": [
+          {
+            "type": "DOOR",
+            "locationId": "37",
+            "losLocationIds": []
+          },
+          {
+            "type": "DOOR",
+            "locationId": "18",
+            "losLocationIds": []
+          },
+          {
+            "type": "DOOR",
+            "locationId": "44",
+            "losLocationIds": []
+          }
+        ],
+        "polygon": [],
+        "crewStackId": "38-1",
+        "monsterStackId": "38-2",
+        "weaponStackIds": []
+      },
+      "39": {
+        "id": "39",
+        "name": "Damage Control",
+        "apertures": [
+          {
+            "type": "DOOR",
+            "locationId": "43",
+            "losLocationIds": [
+              "22",
+              "42",
+              "43"
+            ]
+          },
+          {
+            "type": "DOOR",
+            "locationId": "40",
+            "losLocationIds": []
+          },
+          {
+            "type": "DOOR",
+            "locationId": "19",
+            "losLocationIds": []
+          }
+        ],
+        "polygon": [],
+        "crewStackId": "39-1",
+        "monsterStackId": "39-2",
+        "weaponStackIds": []
+      },
+      "40": {
+        "id": "40",
+        "name": "Machine Shop",
+        "apertures": [
+          {
+            "type": "DOOR",
+            "locationId": "42",
+            "losLocationIds": [
+              "22",
+              "42",
+              "43"
+            ]
+          },
+          {
+            "type": "DOOR",
+            "locationId": "41",
+            "losLocationIds": []
+          },
+          {
+            "type": "DOOR",
+            "locationId": "20",
+            "losLocationIds": []
+          },
+          {
+            "type": "DOOR",
+            "locationId": "19",
+            "losLocationIds": []
+          },
+          {
+            "type": "DOOR",
+            "locationId": "39",
+            "losLocationIds": []
+          }
+        ],
+        "polygon": [],
+        "crewStackId": "40-1",
+        "monsterStackId": "40-2",
+        "weaponStackIds": []
+      },
+      "41": {
+        "id": "41",
+        "name": "Life Support Center",
+        "apertures": [
+          {
+            "type": "DOOR",
+            "locationId": "40",
+            "losLocationIds": []
+          }
+        ],
+        "polygon": [],
+        "crewStackId": "41-1",
+        "monsterStackId": "41-2",
+        "weaponStackIds": []
+      },
+      "42": {
+        "id": "42",
+        "name": "Hallway",
+        "apertures": [
+          {
+            "type": "DOOR",
+            "locationId": "22",
+            "losLocationIds": []
+          },
+          {
+            "type": "DOOR",
+            "locationId": "24",
+            "losLocationIds": []
+          },
+          {
+            "type": "DOOR",
+            "locationId": "40",
+            "losLocationIds": []
+          },
+          {
+            "type": "DOOR",
+            "locationId": "43",
+            "losLocationIds": []
+          }
+        ],
+        "polygon": [],
+        "crewStackId": "42-1",
+        "monsterStackId": "42-2",
+        "weaponStackIds": []
+      },
+      "43": {
+        "id": "43",
+        "name": "Hallway",
+        "apertures": [
+          {
+            "type": "DOOR",
+            "locationId": "42",
+            "losLocationIds": []
+          },
+          {
+            "type": "DOOR",
+            "locationId": "26",
+            "losLocationIds": [
+              "5",
+              "26"
+            ]
+          },
+          {
+            "type": "DOOR",
+            "locationId": "39",
+            "losLocationIds": []
+          },
+          {
+            "type": "DOOR",
+            "locationId": "44",
+            "losLocationIds": []
+          }
+        ],
+        "polygon": [],
+        "crewStackId": "43-1",
+        "monsterStackId": "43-2",
+        "weaponStackIds": []
+      },
+      "44": {
+        "id": "44",
+        "name": "Hallway",
+        "apertures": [
+          {
+            "type": "DOOR",
+            "locationId": "43",
+            "losLocationIds": [
+              "22",
+              "42",
+              "43"
+            ]
+          },
+          {
+            "type": "DOOR",
+            "locationId": "38",
+            "losLocationIds": []
+          },
+          {
+            "type": "DOOR",
+            "locationId": "29",
+            "losLocationIds": []
+          },
+          {
+            "type": "DOOR",
+            "locationId": "37",
+            "losLocationIds": []
+          },
+          {
+            "type": "DOOR",
+            "locationId": "45",
+            "losLocationIds": []
+          }
+        ],
+        "polygon": [],
+        "crewStackId": "44-1",
+        "monsterStackId": "44-2",
+        "weaponStackIds": []
+      },
+      "45": {
+        "id": "45",
+        "name": "Hallway",
+        "apertures": [
+          {
+            "type": "DOOR",
+            "locationId": "44",
+            "losLocationIds": []
+          },
+          {
+            "type": "DOOR",
+            "locationId": "30",
+            "losLocationIds": []
+          },
+          {
+            "type": "DOOR",
+            "locationId": "32",
+            "losLocationIds": [
+              "11",
+              "32"
+            ]
+          },
+          {
+            "type": "DOOR",
+            "locationId": "34",
+            "losLocationIds": [
+              "34",
+              "14"
+            ]
+          }
+        ],
+        "polygon": [],
+        "crewStackId": "45-1",
+        "monsterStackId": "45-2",
+        "weaponStackIds": []
+      }
+    }
+  },
+  "counterTypes": {},
+  "imageMap": {
+    "board": {
+      "src": "/images/Board0.png"
+    },
+    "1st-Officer": {
+      "src": "/images/1st-Officer.png"
+    },
+    "Captain-Yid": {
+      "src": "/images/Captain-Yid.png"
+    },
+    "Comm-Officer": {
+      "src": "/images/Comm-Officer.png"
+    },
+    "Cook": {
+      "src": "/images/Cook.png"
+    },
+    "Coxswain": {
+      "src": "/images/Coxswain.png"
+    },
+    "Doc": {
+      "src": "/images/Doc.png"
+    },
+    "Engineer": {
+      "src": "/images/Engineer.png"
+    },
+    "Engineer-Officer": {
+      "src": "/images/Engineer-Officer.png"
+    },
+    "Machinist": {
+      "src": "/images/Machinist.png"
+    },
+    "Marine": {
+      "src": "/images/Marine.png"
+    },
+    "Marine2": {
+      "src": "/images/Marine2.png"
+    },
+    "Mascot": {
+      "src": "/images/Mascot.png"
+    },
+    "Medic": {
+      "src": "/images/Medic.png"
+    },
+    "Ops-Officer": {
+      "src": "/images/Ops-Officer.png"
+    },
+    "Pilot": {
+      "src": "/images/Pilot.png"
+    },
+    "Pilot2": {
+      "src": "/images/Pilot2.png"
+    },
+    "Robot": {
+      "src": "/images/Robot.png"
+    },
+    "Sarge": {
+      "src": "/images/Sarge.png"
+    },
+    "Sparks": {
+      "src": "/images/Sparks.png"
+    },
+    "Supply-Officer": {
+      "src": "/images/Supply-Officer.png"
+    },
+    "Tech": {
+      "src": "/images/Tech.png"
+    },
+    "Yeoman": {
+      "src": "/images/Yeoman.png"
+    },
+    "BottleOfAcid": {
+      "src": "/images/BottleOfAcid.png"
+    },
+    "CannisterOfZgwortz": {
+      "src": "/images/CannisterOfZgwortz.png"
+    },
+    "CommBeamer": {
+      "src": "/images/CommBeamer.png"
+    },
+    "ElectricFence": {
+      "src": "/images/ElectricFence.png"
+    },
+    "FireExtinguisher": {
+      "src": "/images/FireExtinguisher.png"
+    },
+    "GasGrenade": {
+      "src": "/images/GasGrenade.png"
+    },
+    "Hypodermic": {
+      "src": "/images/Hypodermic.png"
+    },
+    "Knife": {
+      "src": "/images/Knife.png"
+    },
+    "PoolStick": {
+      "src": "/images/PoolStick.png"
+    },
+    "RocketFuel": {
+      "src": "/images/RocketFuel.png"
+    },
+    "StunPistol": {
+      "src": "/images/StunPistol.png"
+    },
+    "WeldingTorch": {
+      "src": "/images/WeldingTorch.png"
+    }
+  }
+}

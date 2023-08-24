@@ -22,12 +22,6 @@
     font-weight: bold;
 }
 
-.map-config-counters {
-    flex-grow: 1;
-    overflow:auto;
-
-    display:flex;
-    flex-direction: column;
-    flex-wrap:nowrap;
-    align-content:flex-start;
+.map-config-edit-panel {
+    text-align: left;
 }

@@ -55,7 +55,7 @@ function App() {
       <ToolBar />
       <div className="game-center">
         <MapConfig callback={configCallBack} />
-        <Map callback={configCallBack} />
+        <Map />
       </div>
       <StatusBar />
     </div>

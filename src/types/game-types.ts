@@ -55,6 +55,7 @@ export interface GameState {
     currentPlayerId: number,
     phasingPlayerId: number,
     players: Player[],
+    currentLocationId?: string,
     scale: number,
     scenarioFile?: string,
     counters: CounterMap,

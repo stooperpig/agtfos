@@ -416,15 +416,18 @@ const createStack = (id: string): Stack => {
 const createEgg = (id: string): Counter => {
   const roll = pickRandom(5);
   return {
-    id: id,
-    name: 'Egg',
-    type: CounterType.EGG,
-    state: CounterState.NORMAL,
-    movementAllowance: 0,
-    attackDice: 0,
-    constitution: 5,
-    imageName: `Egg-${roll}`
-  }
+  id: id,
+  name: 'Egg',
+  type: CounterType.EGG,
+  state: CounterState.NORMAL,
+  movementAllowance: 0,
+  attackDice: 0,
+  constitution: 5,
+  imageName: `Egg-${roll}`,
+  selected: false,
+  usedMovementAllowance: 0,
+  stunnded: false
+}
 }
 
 const createBaby = (id: string): Counter => {
@@ -435,9 +438,12 @@ const createBaby = (id: string): Counter => {
     type: CounterType.BABY,
     state: CounterState.NORMAL,
     movementAllowance: 1,
+    usedMovementAllowance: 0,
     attackDice: 2,
     constitution: 12,
-    imageName: `Baby-${roll}`
+    imageName: `Baby-${roll}`,
+    selected: false,
+    stunnded: false
   }
 }
 
@@ -449,9 +455,12 @@ const createAdult = (id: string): Counter => {
     type: CounterType.ADULT,
     state: CounterState.NORMAL,
     movementAllowance: 2,
+    usedMovementAllowance: 0,
     attackDice: 4,
     constitution: 16,
-    imageName: `Adult-${roll}`
+    imageName: `Adult-${roll}`,
+    selected: false,
+    stunnded: false
   }
 }
 
@@ -463,9 +472,12 @@ const createFragment = (id: string): Counter => {
     type: CounterType.FRAGMENT,
     state: CounterState.NORMAL,
     movementAllowance: 0,
+    usedMovementAllowance: 0,
     attackDice: 1,
     constitution: 8,
-    imageName: `Fragment-${roll}`
+    imageName: `Fragment-${roll}`,
+    selected: false,
+    stunnded: false
   }
 }
 

@@ -9,26 +9,28 @@ import { useAppDispatch } from './constants/hooks';
 import { retrieveGame } from './actions';
 import { MapConfig } from './components/mapconfig/map-config';
 import { Coord } from './types/game-types';
+import { SideBar } from './components/sidebar/side-bar';
 
 
-const configCallBack = (() => {
-  let listener: any = undefined;
+// const configCallBack = (() => {
+//   let listener: any = undefined;
 
-  const addListener = (aListener: any) => {
-    listener = aListener;
-  }
+//   const addListener = (aListener: any) => {
+//     listener = aListener;
+//   }
 
-  const addPoint = (coord: Coord) => {
-    if (listener !== undefined) {
-      listener(coord);
-    }
-  }
+//   const addPoint = (coord: Coord) => {
+//     if (listener !== undefined) {
+//       listener(coord);
+//     }
+//   }
 
-  return({
-    addListener: addListener,
-    addPoint: addPoint
-  });
-})();
+//   return({
+//     addListener: addListener,
+//     addPoint: addPoint
+//   });
+
+// })();
 
 function App() {
   const dispatch = useAppDispatch();
@@ -54,7 +56,7 @@ function App() {
       <MenuBar />
       <ToolBar />
       <div className="game-center">
-        <MapConfig callback={configCallBack} />
+        <SideBar/>
         <Map />
       </div>
       <StatusBar />

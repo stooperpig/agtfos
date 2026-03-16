@@ -24,11 +24,14 @@ export interface Counter {
     name?: string,
     type: CounterType,
     state: CounterState,
+    selected: boolean,
     weapon?: WeaponType,
     movementAllowance: number,
     attackDice: number,
     constitution: number,
-    imageName: string
+    imageName: string,
+    usedMovementAllowance: number,
+    stunnded: boolean
 }
 
 export enum CounterType {

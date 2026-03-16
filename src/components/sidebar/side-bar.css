@@ -22,6 +22,20 @@
     font-weight: bold;
 }
 
+.side-bar-tab {
+    display: inline-block;
+    width: 30px;
+    text-align: center;
+}
+
+.side-bar-tab-selected {
+    display: inline-block;
+    width: 30px;
+    border: 1px solid white;
+    font-weight: bold;
+    text-align: center;
+}
+
 .side-bar-counters {
     flex-grow: 1;
     overflow:auto;

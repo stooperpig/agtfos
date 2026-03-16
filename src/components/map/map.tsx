@@ -6,7 +6,8 @@ import { RootState } from '../../constants/store';
 import scenarioData from '../../constants/scenario-data';
 import { Coord, Counter, CounterMap, LocationMap, Polygon, Stack, StackMap, Location } from '../../types/game-types';
 import { pointInPolygon } from '../../utils/map-utils';
-import { SET_CURRENT_LOCATION_ID } from '../../constants/action-constants';
+import { MOVE_TO_LOCATION, SET_CURRENT_LOCATION_ID } from '../../constants/action-constants';
+import { moveToLocation, selectLocation } from './actions';
 
 const updateCanvas = (canvas: HTMLCanvasElement, scale: number, boardName: string, stacks: StackMap, counters: CounterMap, locationMap: LocationMap | undefined,
     currentLocationId: string | undefined) => {
@@ -42,7 +43,7 @@ const updateCanvas = (canvas: HTMLCanvasElement, scale: number, boardName: strin
     console.log('drawing board');
     context.drawImage(board, 0, 0, boardWidth, boardHeight);
 
-    context.drawImage(counter, 0, 0, counterWidth, counterHeight);
+    //context.drawImage(counter, 0, 0, counterWidth, counterHeight);
 
     if (locationMap !== undefined) {
         const keys = Object.keys(locationMap);
@@ -159,9 +160,9 @@ export const Map = (props: PropTypes) => {
     }, [canvasRef, scale, boardImageName, stacks, counters, locationMap, currentLocationId]);
 
     const handleLeftClick = (event: any) => {
-        let posX = event.nativeEvent.offsetX;
-        let posY = event.nativeEvent.offsetY;
-        //console.log(`click (${posX},${posY})`);
+        const posX = event.nativeEvent.offsetX;
+        const posY = event.nativeEvent.offsetY;
+
         if (props.callback !== undefined) {
             props.callback.addPoint({ x: posX, y: posY });
         }
@@ -170,13 +171,25 @@ export const Map = (props: PropTypes) => {
         console.log(`clicked on location: ${location ? location.id : 'not found'}`);
 
         if (location !== undefined) {
-            dispatch({ type: SET_CURRENT_LOCATION_ID, payload: location.id });
+            dispatch(selectLocation(location.id));
+        }
+    }
+
+    const handleRightClick = (event: any) => {
+        event.preventDefault();
+
+        const posX = event.nativeEvent.offsetX;
+        const posY = event.nativeEvent.offsetY;
+
+        const location = getLocation(locationMap, { x: posX / scale, y: posY / scale });
+        if (location !== undefined) {
+            dispatch(moveToLocation(location.id));
         }
     }
 
     return (
         <div className="map">
-            <canvas ref={canvasRef} className="field-canvas" onClick={handleLeftClick}></canvas>
+            <canvas ref={canvasRef} className="field-canvas" onClick={handleLeftClick} onContextMenu={handleRightClick}></canvas>
         </div>
     );
 }

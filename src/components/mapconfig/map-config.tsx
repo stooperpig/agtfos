@@ -3,7 +3,7 @@ import { Coord, LocationMap, Polygon } from '../../types/game-types';
 import './map-config.css';
 import { useAppDispatch, useAppSelector } from '../../constants/hooks';
 import { RootState } from '../../constants/store';
-import { UPDATE_LOCATION } from '../../constants/action-constants';
+import { SELECT_LOCATION } from '../../constants/action-constants';
 
 interface PropTypes {
     callback: any
@@ -73,11 +73,11 @@ export const MapConfig = (props: PropTypes) => {
             const polygon = createBox(points[0]);
             const location = { ...locationMap![currentLocationId] };
             location.crewStackPolygon = polygon;
-            dispatch({ type: UPDATE_LOCATION, payload: location });
+            dispatch({ type: SELECT_LOCATION, payload: location });
         } else {
             const location = { ...locationMap![currentLocationId] };
             location.crewStackPolygon = [];
-            dispatch({ type: UPDATE_LOCATION, payload: location });
+            dispatch({ type: SELECT_LOCATION, payload: location });
         }
 
         setPoints([]);
@@ -88,11 +88,11 @@ export const MapConfig = (props: PropTypes) => {
             const polygon = createBox(points[0]);
             const location = { ...locationMap![currentLocationId] };
             location.monsterStackPolygon = polygon;
-            dispatch({ type: UPDATE_LOCATION, payload: location });
+            dispatch({ type: SELECT_LOCATION, payload: location });
         } else {
             const location = { ...locationMap![currentLocationId] };
             location.monsterStackPolygon = [];
-            dispatch({ type: UPDATE_LOCATION, payload: location });
+            dispatch({ type: SELECT_LOCATION, payload: location });
         }
 
         setPoints([]);
@@ -104,12 +104,12 @@ export const MapConfig = (props: PropTypes) => {
             const location = { ...locationMap![currentLocationId] };
             location.weaponStackPolygons = location.weaponStackPolygons ? [...location.weaponStackPolygons] : [];
             location.weaponStackPolygons[id] = polygon;
-            dispatch({ type: UPDATE_LOCATION, payload: location });
+            dispatch({ type: SELECT_LOCATION, payload: location });
         } else {
             const location = { ...locationMap![currentLocationId] };
             location.weaponStackPolygons = location.weaponStackPolygons ? [...location.weaponStackPolygons] : [];
             location.weaponStackPolygons[id] = [];
-            dispatch({ type: UPDATE_LOCATION, payload: location });
+            dispatch({ type: SELECT_LOCATION, payload: location });
         }
 
         setPoints([]);
@@ -127,7 +127,7 @@ export const MapConfig = (props: PropTypes) => {
         if (currentLocationId !== undefined) {
             const location = { ...locationMap![currentLocationId] };
             location.polygon = points;
-            dispatch({ type: UPDATE_LOCATION, payload: location });
+            dispatch({ type: SELECT_LOCATION, payload: location });
             setPoints([]);
         }
     }

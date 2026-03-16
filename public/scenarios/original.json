@@ -946,6 +946,11 @@
           },
           {
             "type": "DOOR",
+            "locationId": "12",
+            "losLocationIds": []
+          },
+          {
+            "type": "DOOR",
             "locationId": "32",
             "losLocationIds": []
           }
@@ -1894,6 +1899,16 @@
           },
           {
             "type": "DOOR",
+            "locationId": "2",
+            "losLocationIds": []
+          },
+          {
+            "type": "DOOR",
+            "locationId": "21",
+            "losLocationIds": []
+          },
+          {
+            "type": "DOOR",
             "locationId": "42",
             "losLocationIds": []
           }
@@ -2184,6 +2199,11 @@
           {
             "type": "DOOR",
             "locationId": "25",
+            "losLocationIds": []
+          },
+          {
+            "type": "DOOR",
+            "locationId": "27",
             "losLocationIds": []
           },
           {

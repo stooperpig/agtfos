@@ -1,0 +1,19 @@
+.home-page {
+    padding: 10px;
+    font-size: 18px;
+    background-image: linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.55)), url('background.png');
+    background-size: cover;
+    background-position: center;
+}
+
+.home-page-left-image {
+    float: left;
+    width: 400px;
+    padding: 20px;
+}
+
+.home-page-right-image {
+    float: right;
+    width: 400px;
+    padding: 20px;
+}

@@ -1,0 +1,41 @@
+{
+  "name": "@base-mono/client",
+  "version": "1.0.0",
+  "description": "",
+  "main": "./dist/index.js",
+  "scripts": {
+    "lint": "eslint src/**/*.{js,jsx,ts,tsx}",
+    "dev": "webpack server --open --config webpack.config.cjs",
+    "build": "webpack --config webpack.config.cjs --mode production",
+    "test": "jest"
+  },
+  "dependencies": {
+    "@reduxjs/toolkit": "^2.5.0",
+    "pusher-js": "^8.4.0-rc2",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-draggable": "^4.4.6",
+    "react-redux": "^9.2.0",
+    "react-router-dom": "^7.1.1",
+    "redux-devtools-extension": "^2.13.9"
+  },
+  "devDependencies": {
+    "@babel/preset-env": "^7.26.0",
+    "@babel/preset-react": "^7.26.3",
+    "@babel/preset-typescript": "^7.26.0",
+    "@types/lodash.clonedeep": "^4.5.9",
+    "@types/react": "^19.0.3",
+    "@types/react-dom": "^19.0.2",
+    "copy-webpack-plugin": "^12.0.2",
+    "babel-jest": "^29.7.0",
+    "babel-loader": "^9.2.1",
+    "css-loader": "^7.1.2",
+    "globals": "^15.14.0",
+    "html-webpack-plugin": "^5.6.3",
+    "style-loader": "^4.0.0",
+    "ts-node": "^10.9.2",
+    "webpack": "^5.97.1",
+    "webpack-cli": "^6.0.1",
+    "webpack-dev-server": "^5.2.0"
+  }
+}

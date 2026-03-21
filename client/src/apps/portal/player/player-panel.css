@@ -1,0 +1,56 @@
+.player-panel {
+    color: white;
+    background-color: black;
+    padding-left: 20px;
+    padding-top: 20px;
+    padding-bottom: 20px;
+    background-image: linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.55)), url('background.png');
+    background-size: cover;
+    background-position: center;
+}
+
+
+.player-panel-player-select {
+    width: 125px;
+    margin-bottom: 10px;
+    margin-left: 5px;
+}
+
+.player-panel-scenario-select {
+    width: 200px;
+    margin-bottom: 10px;
+    margin-left: 5px;
+}
+
+.player-panel-games-table {
+    margin-top: 5px;
+    border: 1px grey solid;
+}
+
+.player-panel-games-table th, .player-panel-games-table td {
+    border: 1px grey solid;
+    padding: 3px 15px 3px 15px;
+}
+
+.player-panel-create-game {
+    display: flex;
+    flex-direction: row;
+}
+
+.player-panel-create-game-right {
+    padding-left: 50px;
+    flex-grow: 1;
+}
+
+.player-panel-create-game-players table {
+    border: 1px grey solid;
+}
+
+.games-create-game-players th, .games-create-game-players td {
+    border: 1px grey solid;
+}
+
+.games-create-game-players select {
+    width: 125px;
+    margin-left: 5px;
+}

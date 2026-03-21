@@ -1,0 +1,69 @@
+@font-face {
+    font-family: 'Aerospace';
+    src: url('../../assets/fonts/Aerospace.otf') format('opentype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+.header-image {
+    position: relative;
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    max-height: 350px;
+}
+
+.header-image img {
+    width: 1600px;
+}
+
+.header-image-banner {
+    position: absolute;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-65%, -50%);
+    z-index: 15;
+    font-size: 55px;
+    font-weight: bold;
+    text-align: center;
+    font-family: 'Aerospace', sans-serif;
+    color: black;
+}
+
+.header-image-mask {
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    width: 100%;
+    height: 100%;
+    max-width: 1600px;
+    background-color: blue;
+    background: linear-gradient(to right, rgba(255, 255, 255, 0), rgba(0, 0, 0, .5));
+    z-index: 5;
+}
+
+.header-image-common-greeting {
+    position: absolute;
+    display: flex;
+    top: 10px;
+    left: 0px;
+    width: 100%;
+    z-index: 10;
+}
+
+.header-image-common-signout-form {
+    border-radius: 15px;
+    background-color: black;
+    padding: 5px 10px 5px 10px;
+    margin-left: auto;
+}
+
+.header-image-common-signout-greeting {
+    color: white;
+    margin-right: 20px;
+}
+
+.header-image-common-signout-form button {
+    border-radius: 15px;
+}

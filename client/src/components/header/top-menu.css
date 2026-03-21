@@ -1,0 +1,33 @@
+.top-menu-container {
+    display: flex;
+    flex-direction: row;
+    background-color: blue;
+}
+
+.top-menu-item {
+    text-align: center;
+    height: 50px;
+    flex-grow: 1;
+    display: flex;
+    justify-content: center;
+    align-content: center;
+    flex-direction: column;
+    border: 1px solid white;
+    background-color: black;
+    font-weight: bold;
+    text-decoration: none;
+}
+
+a.top-menu-item {
+    text-decoration: none;
+    color: white;
+}
+
+.top-menu-item.selected {
+    color: black;
+    background-color: green;
+}
+
+.activeLink {
+    color: red;
+}

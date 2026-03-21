@@ -1,0 +1,37 @@
+.menu-bar {
+    min-height:33px;
+    background-color:black;
+    color:white;
+
+    display:flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    align-content: stretch;
+}
+
+.current-phase {
+    font-weight: bold;
+    height:33px;
+    min-width: 110px;
+    background-color:#444444;
+    border: 1px solid grey;
+}
+
+.current-phase td {
+    border-left: 1px solid grey;
+    padding:3px 5px 3px 5px;
+}
+
+.current-phase .edit-mode {
+    background-color: red;
+    color: black;
+}
+
+.current-phase .no-border {
+    border-left: none;
+}
+
+.current-phase .current-player {
+    background-color:#888888;
+}

@@ -1,0 +1,20 @@
+.game-panel {
+    text-align: center;
+    height:100vh;
+  
+    display: flex;
+    flex-direction: column;
+  
+    background-color: pink;
+  }
+  
+  .game-panel-center {
+    flex:1;
+    overflow:auto;
+    background-color:green;
+  
+    display:flex;
+    flex-direction:row;
+    justify-content: stretch;
+  }
+    

@@ -1,0 +1,56 @@
+.dropdown-menu-button {
+    color: white;
+    padding: 5px;
+    font-weight: bold; 
+    cursor: pointer;
+  }
+
+.dropdown-menu-button a {
+   padding: 0px 5px 0px 5px;
+   text-decoration: none;
+   color: white;
+}
+
+.dropdown-menu-button a:hover, .dropdown-menu-button a:visited:hover  {
+   color: black;
+   background-color: lightgray;
+}
+
+.dropdown-menu-button a:visited {
+   color: white;
+}
+
+.dropdown-menu {
+    position: relative;
+    display: inline-block;
+    margin-left:5px;
+}
+
+.dropdown-menu-content {
+   text-align: left;
+   display: none;
+   position: absolute;
+   background-color: lightgrey;
+   min-width: 140px;
+   box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+   z-index: 1;
+}
+  
+.dropdown-menu-content span {
+   color: black;
+   padding: 5px 8px;
+   text-decoration: none;
+   display: block;
+   cursor: pointer;
+}
+  
+.dropdown-menu-content a:hover {background-color: #f1f1f1}
+  
+.dropdown-menu:hover .dropdown-menu-content {
+   display: block;
+}
+  
+.dropdown-menu:hover .dropdown-menu-button {
+   background-color: lightgray;
+   color:black;
+}

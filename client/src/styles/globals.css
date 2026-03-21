@@ -1,0 +1,34 @@
+body {
+    background-color: black;
+    color: white;
+    padding: 0px;
+    margin: 0px;
+}
+
+.player-color-blue {
+    background-color: blue;
+    border: 2px solid blue;
+}
+
+.player-color-green {
+    background-color: green;
+    border: 2px solid green;
+}
+
+.player-color-white {
+    background-color: white;
+    border: 2px solid white;
+    color: black
+}
+
+.player-color-yellow {
+    background-color: yellow;
+    border: 2px solid yellow;
+    color: black;
+}
+
+.player-color-default {
+    background-color: darkgray;
+    border: 2px solid darkgray;
+    color: white;
+}

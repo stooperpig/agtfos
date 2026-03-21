@@ -1,0 +1,6 @@
+.message-bar {
+    flex-grow: 1;
+    color:white;
+    background-color:black;
+    padding-top: 4px;
+}

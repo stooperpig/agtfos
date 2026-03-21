@@ -1,0 +1,16 @@
+.map {
+    flex-grow: 1;
+    background-color: black;
+    overflow: auto;
+}
+
+.mapCanvas {
+}
+
+.fuckit {
+    position: fixed;
+    top: 45%;
+    left: 50%;
+    color: orange;
+    background-color: green;
+}

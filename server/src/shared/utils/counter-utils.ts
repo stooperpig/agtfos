@@ -1,13 +1,25 @@
 import { Counter, CounterType } from "../types/game-types";
 
 export const isCrew = (counter: Counter) => {
-    return counter.type === CounterType.CREW || counter.type === CounterType.ROBOT;
+    return isCrewType(counter.type);
+}
+
+export const isCrewType = (type: CounterType) => {
+    return type === CounterType.CREW || type === CounterType.ROBOT;
 }
 
 export const isMonster = (counter: Counter) => {
-    return counter.type === CounterType.EGG || counter.type === CounterType.BABY || counter.type === CounterType.ADULT || counter.type === CounterType.FRAGMENT;
+    return isMonsterType(counter.type);
+}
+
+export const isMonsterType = (type: CounterType) => {
+    return type === CounterType.EGG || type === CounterType.BABY || type === CounterType.ADULT || type === CounterType.FRAGMENT;
 }
 
 export const isWeapon = (counter: Counter) => {
-    return counter.type === CounterType.WEAPON;
+    return isWeaponType(counter.type);
+}
+
+export const isWeaponType = (type: CounterType) => {
+    return type === CounterType.WEAPON;
 }

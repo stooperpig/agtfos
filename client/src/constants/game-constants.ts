@@ -1,4 +1,4 @@
-import { ImageMap, Scenario, MapInfo } from "../shared/types/game-types";
+import { ImageMap, Scenario } from "../shared/types/game-types";
 
 export const ImageData: ImageMap = {
 };
@@ -8,12 +8,12 @@ export const ScenarioData: Scenario = {
     name: "",
     board: {
         imageName: "",
-        locationMap: {}
+        areaDefinitionMap: {}
     },
     imageMap: {},
     crew: [],
     monsterSettings: {
-        startingMonsterLocationIds: [],
+        startingMonsterAreaIds: [],
         maxBabyCount: 0,
         babyImageCount: 0,
         maxAdultCount: 0,
@@ -24,13 +24,7 @@ export const ScenarioData: Scenario = {
         eggImageCount: 0,
         startingCounts: []
     },
-    weaponMap: {}
+    weaponMap: {},
+    counterWidth: 0,
+    counterHeight: 0
 };
-
-// export const MapData: MapInfo = {
-//     rows: 21,
-//     columns: 32,
-//     entryHexes: [],
-//     gasClouds: [],
-//     starMap: {}
-// }

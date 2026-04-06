@@ -1,15 +1,10 @@
 import { readFileSync, writeFileSync, existsSync, unlinkSync, renameSync } from 'fs';
 import path from 'path';
 import { GameList, ScenarioList } from '../types/server-types'
-import { GameState, Scenario } from '../shared/types/game-types'
+import { GameState, Replay, Scenario } from '../shared/types/game-types'
+import { ReplayType } from '../types/server-types'
 
 const GAME_VERSIONS = 9;
-
-
-export const deleteStarGraph = (gameId: string): void => {
-    const filePath = path.join(process.cwd(), '/data/games', `star-graph-${gameId}.json`);
-    unlinkSync(filePath);
-}
 
 export const deleteGame = (gameId: string): void => {
     const dir = path.join(process.cwd(), '/data/games');
@@ -23,11 +18,11 @@ export const deleteGame = (gameId: string): void => {
     }
 }
 
-export const deleteMap = (gameId: string): void => {
+export const deleteReplay = (gameId: string, type: ReplayType): void => {
     const dir = path.join(process.cwd(), '/data/games');
-    const baseName = `map-data-${gameId}`;
+    const baseName = `game-${gameId}-replay-${type}`;
 
-    for (let i = 0; i <= GAME_VERSIONS; ++i) {
+    for (let i = 0; i <= GAME_VERSIONS + 1; ++i) {
         const filePath = path.join(dir, `${baseName}${i === 0 ? '.json' : `.${i}.json`}`);
         if (existsSync(filePath)) {
             unlinkSync(filePath);
@@ -40,24 +35,23 @@ export const doesGameExist = (gameId: string): boolean => {
     return existsSync(filePath);
 }
 
-export const readCards = () => {
-    const filePath = path.join(process.cwd(), `/data/star-cards.json`);
-    const starCards = JSON.parse(readFileSync(filePath, 'utf8'));
-    return starCards;
-}
-
-// export const readStarGraph = (gameId: string): StarGraph => {
-//     const file = path.join(process.cwd(), '/data/games', `star-graph-${gameId}.json`);
-//     const tournaments = JSON.parse(readFileSync(file, 'utf8'));
-//     return tournaments;
-// }
-
 export const readGame = (gameId: string, version: string | undefined = undefined): GameState => {
     let file;
     if (version !== undefined) {
         file = path.join(process.cwd(), '/data/games', `game-${gameId}.${version}.json`);
     } else {
         file = path.join(process.cwd(), '/data/games', `game-${gameId}.json`);
+    }
+    const game = JSON.parse(readFileSync(file, 'utf8'));
+    return game;
+}
+
+export const readReplay = (gameId: string, type: ReplayType, version: string | undefined = undefined): Replay => {
+    let file;
+    if (version !== undefined) {
+        file = path.join(process.cwd(), '/data/games', `game-${gameId}-replay-${type}.${version}.json`);
+    } else {
+        file = path.join(process.cwd(), '/data/games', `game-${gameId}-replay-${type}.json`);
     }
     const game = JSON.parse(readFileSync(file, 'utf8'));
     return game;
@@ -97,6 +91,24 @@ export const writeGame = (game: GameState): void => {
 
     // Save current version as .json (latest)
     writeFileSync(latestFile, JSON.stringify(game));
+};
+
+export const writeReplay = (gameId: string, replay: Replay, type: ReplayType): void => {
+    const dir = path.join(process.cwd(), '/data/games');
+    const baseName = `game-${gameId}-replay-${type}`;
+    const latestFile = path.join(dir, `${baseName}.json`);
+
+    // Rotate old versions: .json.4 <- .json.3 <- ... <- .json.1 <- .json
+    for (let i = GAME_VERSIONS; i >= 0; --i) {
+        const from = path.join(dir, `${baseName}${i === 0 ? '.json' : `.${i}.json`}`);
+        const to = path.join(dir, `${baseName}.${i + 1}.json`);
+        if (existsSync(from)) {
+            renameSync(from, to);
+        }
+    }
+
+    // Save current version as .json (latest)
+    writeFileSync(latestFile, JSON.stringify(replay));
 };
 
 export const readGameList = (): GameList => {
@@ -145,3 +157,4 @@ export const writeScenarios = (scenarios: ScenarioList): void => {
     const file = path.join(process.cwd(), '/data/scenarios.json');
     writeFileSync(file, JSON.stringify(scenarios));
 }
+

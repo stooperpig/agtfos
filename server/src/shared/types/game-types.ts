@@ -1,138 +1,31 @@
-export enum BotDifficulty {
-    Easy = 'easy',
-    Medium = 'medium',
-    Hard = 'hard',
-    Hardest = 'hardest'
-}
+import { Action, ActionType } from "./action-types"
 
-export interface Coord {
-    x: number
-    y: number
-}
-
-//keep
-export interface GameEntry {
+export interface AreaDefinition {
     id: string
-    status: GameStatus
-    turn: number
-    players: GameEntryPlayer[]
-    debug?: boolean
-}
-
-//keep
-export interface GameEntryPlayer {
-    color: PlayerColor
-    id: string
-    index: number //todo: this is really only used on creation of game
     name: string
-    //teamId: string
-    //type: PlayerType
-    //botDifficulty?: BotDifficulty
+    apertures: Aperture[]
+    polygon: Polygon
+    coord?: Coord
+    crewStackPolygon?: Polygon
+    monsterStackPolygon?: Polygon
+    weaponStacks: AreaWeaponStack[],
 }
 
-//delete
-export interface GameEntryTeam {
+export interface AreaDefinitionMap {
+    [key: string]: AreaDefinition
+}
+
+export interface AreaWeaponStack {
     id: string
-    players: GameEntryPlayer[]
+    type: WeaponType
+    polygon?: Polygon
+    coord?: Coord
 }
-
-export enum GameMode {
-    COMBINE_TASK_FORCE = "COMBINE_TF",
-    LAND_CTS = "LAND_CTS",
-    NORMAL = "NORMAL",
-    SET_TASK_FORCE_DESTINATION = "SET_TASK_FORCE_DESTINATION",
-    SPLIT_TASK_FORCE = "SPLIT_TF",
-    TRANSFER_SHIPS = "TRANSFER_SHIPS",
-}
-
-export interface GameState {
-     phase: Phase
-     players: Player[]
-     currentLocationId?: string
-     scenarioId: string
-     counterMap: CounterMap
-     nextCounterId: number
-     stackMap: StackMap
-    connectedClients: number
-    currentPlayerId: string
-    debug: boolean
-    gameMode: GameMode
-    id: string
-    isGameOver: boolean
-    refreshGame: boolean
-    statusMessage?: string
-    turn: number
-    weaponEffectMap: {
-        [key: string]: WeaponEffect
-    }
-    mapScale: number
-    selectedCounterIds: string[]
-    monsterTurnStatus: PlayerTurnStatus
-}
-
-export enum GameStatus {
-    ACTIVE = "ACTIVE",
-    FINISHED = "FINISHED"
-}
-
-export interface GeneralInfo {
-    playerId: string
-    coord: Coord
-    messages: string[]
-}
-
-//keep
-export interface NewGamePlayer {
-    index: number
-    id?: string
-    name?: string
-    color?: PlayerColor
-}
-
-//keep
-export interface Player extends GameEntryPlayer {
-    active: boolean
-    turnStatus: PlayerTurnStatus
-}
-
-//keep
-export enum PlayerColor {
-    BLUE = "BLUE",
-    RED = "RED",
-    YELLOW = "YELLOW",
-    GREEN = "GREEN"
-}
-
-export interface PlayerMap {
-    [key: string]: Player
-}
-
-export enum PlayerTurnStatus {
-    FINISHED = 'FINISHED',
-    NONE = 'NONE',
-    STARTED = 'STARTED'
-}
-
-//delete
-export enum PlayerType {
-    BOT = 'Bot',
-    HUMAN = 'Human'
-}
-
-export interface SaveGameData {
-    completedTurn: boolean
-    actionMap: CounterActionMap
-}
-
-//******************************************************************************************************************** */
-//******************************************************************************************************************** */
-//******************************************************************************************************************** */
-//******************************************************************************************************************** */
 
 export interface Aperture {
     type: ApertureType,
-    locationId: string,
-    losLocationIds: string[]
+    areaId: string,
+    losAreaIds: string[]
 }
 
 export enum ApertureType {
@@ -142,11 +35,18 @@ export enum ApertureType {
 
 export interface Board {
     imageName: string,
-    locationMap: LocationMap
+    areaDefinitionMap: AreaDefinitionMap
+}
+
+export enum BotDifficulty {
+    Easy = 'easy',
+    Medium = 'medium',
+    Hard = 'hard',
+    Hardest = 'hardest'
 }
 
 export interface Coord {
-    x: number,
+    x: number
     y: number
 }
 
@@ -162,28 +62,17 @@ export interface Counter {
     constitution: number
     imageName: string
     usedMovementAllowance: number
-    phaseStartingStackId?: string
+    coord?: Coord
+    areaId?: string
     playerId?: string
-    actions: CounterAction[]
+    actions: Action[]
+    ownerCounterId?: string
+    engaged: boolean
+    spotted: boolean
 }
 
-export interface CounterAction {
-    type: CounterActionType
-    targetId?: string
-    weaponId?: string
-    fromStackId?: string
-    toStackId?: string
-}
-
-export interface CounterActionMap {
-    [counterId: string]: CounterAction[]
-}
-
-export enum CounterActionType {
-    MOVE = 'MOVE',
-    ATTACK = 'ATTACK',
-    GROW = 'GROW',
-    GRAB_WEAPON = 'GRAB_WEAPON'
+export interface CounterMap {
+    [key: string]: Counter
 }
 
 export enum CounterType {
@@ -196,8 +85,60 @@ export enum CounterType {
     WEAPON = 'WEAPON'
 }
 
-export interface CounterMap {
-    [key: string]: Counter
+export interface GameEntry {
+    id: string
+    status: GameStatus
+    turn: number
+    players: GameEntryPlayer[]
+    debug?: boolean
+}
+
+export interface GameEntryPlayer {
+    color: PlayerColor
+    id: string
+    index: number //todo: this is really only used on creation of game
+    name: string
+}
+
+export enum GameMode {
+    NORMAL = "NORMAL"
+}
+
+export interface GameState {
+    phase: Phase
+    players: Player[]
+    currentAreaId?: string
+    scenarioId: string
+    counterMap: CounterMap
+    nextCounterId: number
+    stackMap: StackMap
+    connectedClients: number
+    currentPlayerId: string
+    debug: boolean
+    gameMode: GameMode
+    id: string
+    isGameOver: boolean
+    refreshGame: boolean
+    statusMessage?: string
+    turn: number
+    weaponEffectMap: {
+        [key: string]: WeaponEffect
+    }
+    mapScale: number
+    selectedCounterIds: string[]
+    monsterTurnStatus: PlayerTurnStatus
+    replay?: Replay
+}
+
+export enum GameStatus {
+    ACTIVE = "ACTIVE",
+    FINISHED = "FINISHED"
+}
+
+export interface GeneralInfo {
+    playerId: string
+    coord: Coord
+    messages: string[]
 }
 
 export interface Image {
@@ -209,29 +150,8 @@ export interface ImageMap {
     [key: string]: Image
 }
 
-export interface Location {
-    id: string
-    name: string
-    apertures: Aperture[]
-    polygon: Polygon
-    crewStackPolygon: Polygon
-    monsterStackPolygon: Polygon
-    weaponStacks: LocationWeaponStack[],
-}
-
-export interface LocationMap {
-    [key: string]: Location
-}
-
-export interface LocationWeaponStack {
-    id: string
-    type: WeaponType
-    polygon: Polygon
-}
-
-
 export interface MonsterSettings {
-    startingMonsterLocationIds: string[]
+    startingMonsterAreaIds: string[]
     maxBabyCount: number
     babyImageCount: number
     maxAdultCount: number
@@ -247,19 +167,123 @@ export interface MonsterSettings {
     }[]
 }
 
+// export type MoveToCoordAction = {
+//     type: CounterActionType.MOVE_TO_COORD,
+//     payload: {
+//         counterIds: string[],
+//         fromAreaId: string,
+//         toAreaId: string,
+//         toCoord: Coord
+//     }
+// };
+
+export interface NewGamePlayer {
+    index: number
+    id?: string
+    name?: string
+    color?: PlayerColor
+}
 
 export enum Phase {
     MOVE = "MOVE",
-    ATTACK = "ATTACK"
+    ATTACK = "ATTACK",
 }
 
 export type Polygon = Coord[];
+
+export interface Player extends GameEntryPlayer {
+    active: boolean
+    turnStatus: PlayerTurnStatus
+}
+
+export interface PlayerMap {
+    [key: string]: Player
+}
+
+export enum PlayerColor {
+    BLUE = "BLUE",
+    RED = "RED",
+    YELLOW = "YELLOW",
+    GREEN = "GREEN"
+}
+
+export enum PlayerTurnStatus {
+    FINISHED = 'FINISHED',
+    STARTED = 'STARTED'
+}
+
+
+export enum PlayerType {
+    BOT = 'Bot',
+    HUMAN = 'Human'
+}
+
+// type ReplayEvent =
+//     | { type: CounterActionType.MOVE; payload: { counterIds: string[]; fromAreaId: string; toAreaId: string, fromCoord: Coord, toCoord: Coord } }
+//     | { type: CounterActionType.ATTACK; attackerId: string; targetId: string; damage: number }
+//     | { type: CounterActionType.GRAB_WEAPON; crewId: string; itemId: string }
+//     | { type: CounterActionType.DROP_WEAPON; crewId: string; itemId: string }
+//     | { type: CounterActionType.INITIALIZE; payload: { counterId: string; areaId: string, coord: Coord, stunned: boolean, weaponId: string | undefined, usedMovementAllowance: number } }
+
+export interface ReplayState {
+    counterMap: CounterMap
+    stackMap: StackMap
+}
+
+export interface Replay {
+    activeState?: ReplayState
+    startingState: ReplayState
+    replayElements: ReplayElements
+    index: number
+    playing: boolean
+    show: boolean
+}
+
+export interface ReplayElements {
+    movementElements: ReplayMovementElement[]
+    attackElements: ReplayAttackElement[]
+    //fireElements: ReplayFireElement[]
+}
+
+export interface ReplayAttackElement {
+    attackerId: string
+    targetId: string
+    damage: number
+}
+
+export interface ReplayMovementElement {
+    type: ActionType;
+    counterId: string;
+    fromAreaId: string;
+    fromCoord: Coord;
+    toAreaId: string;
+    toCoord: Coord;
+    weaponCounterId: string;
+    movementCost: 0;
+    engagedData: { [key:string]: boolean };   //todo: this probably needs to set property on all effected counters [] not just the moving counter,  
+    spottedData: { [key:string]: boolean };   //todo: this probably needs to set property on all effected counters (map) not just the moving counter,
+}
+
+export interface ReplayCounter {
+    counterId: string
+    //facing: number
+    //formation: Formation
+    movementAllowance: number
+}
+
+
+// export interface SaveGameData {
+//     completedTurn: boolean
+//     actionMap: CounterActionMap
+// }
 
 export interface Scenario {
     id: string
     name: string
     board: Board
     imageMap: ImageMap
+    counterWidth: number
+    counterHeight: number
     crew: ScenarioCrew[]
     monsterSettings: MonsterSettings
     weaponMap: {
@@ -270,15 +294,6 @@ export interface Scenario {
     }
 }
 
-// export interface WeaponSettings {
-//     maxCountMap: {
-//         [key in WeaponType]:  {
-//             count: number
-
-//         }
-//     }
-// }
-
 export interface ScenarioCrew {
     name: string
     type: CounterType
@@ -286,7 +301,7 @@ export interface ScenarioCrew {
     attackDice: number
     constitution: number
     imageName: string
-    startingLocationIds: string[]
+    startingAreaIds: string[]
 }
 
 export interface ScenarioEntry {

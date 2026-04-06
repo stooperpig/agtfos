@@ -1,47 +1,46 @@
 .container-counter-panel.selected {
-    background-color:#9a9a9a;
+    background-color: #9a9a9a;
 }
 
 .counter-panel {
     border: 1px solid lightgrey;
-    display:flex;
-    flex-direction: row;
-    min-height:48px;
-    padding:5px;
+    display: block;
+    min-height: 48px;
+    padding: 5px;
 }
 
 .empty-counter-panel {
-    display:flex;
+    display: flex;
     flex-direction: row;
-    min-height:48px;
-    padding:5px;
+    min-height: 48px;
+    padding: 5px;
 }
 
-.counter-panel.support-weapons {
-    border-bottom:none;
+.counter-panel-main {
+    display: flex;
+    flex-direction: row;
 }
 
-.counter-panel img {
-    width:90px;
-    height:90px;
+img.counter-panel-weapon-image {
+    margin-top: 5px;
+    width: 48px;
+    height: 48px;
 }
 
-.counter-panel img.ghost {
-    width:48px;
-    height:48px;
-    opacity: 0.25;
+.counter-panel-image {
+    width: 90px;
+    height: 90px;
 }
 
 .counter-panel.selected {
-    background-color:#9a9a9a;
+    background-color: #9a9a9a;
 }
 
 .counter-panel-data {
-    display:flex;
-    flex-direction:column;
+    display: flex;
+    flex-direction: column;
 
-    width:70px;
-    height:48px;
-    font-size:.60em;
+    width: 60px;
+    font-size: .60em;
     text-align: center;
 }

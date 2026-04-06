@@ -9,7 +9,7 @@
 
     border-right:1px solid grey;
 
-    min-width:150px;
+    min-width:163px;
 
     color:white;
     background-color:black;
@@ -25,28 +25,30 @@
 }
 
 .side-bar-header {
-    margin: 0px 0px 5px 0px;
+    margin: 5px 0px 5px 0px;
     text-align: left;
     font-weight: bold;
 }
 
 .side-bar-tab {
     display: inline-block;
-    width: 30px;
+    width: 70px;
     text-align: center;
 }
 
 .side-bar-tab-selected {
     display: inline-block;
-    width: 30px;
-    border: 1px solid white;
+    width: 70px;
+    background-color: grey;
+
+    color: black;
     font-weight: bold;
     text-align: center;
 }
 
 .side-bar-counters {
     flex-grow: 1;
-    overflow:auto;
+    overflow-y: auto;
 
     display:flex;
     flex-direction: column;

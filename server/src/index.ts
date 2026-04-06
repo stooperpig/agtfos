@@ -7,8 +7,7 @@ import { consoleLogger } from './utils/logger';
 
 import gamesRouter from './routes/games-router';
 import scenariosRouter from './routes/scenarios-router';
-import messageRouter, { initializePusher } from './routes/message-router';
-
+import { initializePusher } from './utils/push-actions';
 
 console.log(`node_env: ${process.env.NODE_ENV}`);
 const configPath = (process.env.NODE_ENV !== undefined && process.env.NODE_ENV.trim().length > 0) ? `.env.${process.env.NODE_ENV}` : '.env';
@@ -35,7 +34,6 @@ app.use(express.static(path.join(process.cwd(), 'public')));
 app.use(express.static(path.join(process.cwd(), 'dist')));
 
 app.use('/api/games', gamesRouter);
-app.use('/api/message', messageRouter);
 app.use('/api/scenarios', scenariosRouter);
 
 console.log(`consoleLogger levels ${JSON.stringify(consoleLogger.levels)}`);

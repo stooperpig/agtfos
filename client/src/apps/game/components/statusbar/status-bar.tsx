@@ -5,7 +5,7 @@ import { useAppSelector } from '../../../../constants/store';
 
 const StatusBar = () => {
     const turn = useAppSelector(state => state.turn);
-    const currentLocationId = useAppSelector(state => state.currentLocationId);
+    const currentLocationId = useAppSelector(state => state.currentAreaId);
 
     const renderCurrentLocation = (currentLocationId: string | undefined) => {
         if (currentLocationId) {

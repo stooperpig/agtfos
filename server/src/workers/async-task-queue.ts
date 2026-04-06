@@ -5,8 +5,8 @@ import { Job, Task, WorkerMessage } from '../types/server-types';
 
 const isDev = process.env.NODE_ENV === "dev";
 const workerPath = isDev
-    ? path.join(process.cwd(), "/src/workers", "queue-worker.ts") // Dev mode (use ts-node)
-    : path.join(process.cwd(), "/dist/workers", "queue-worker.js"); // Prod mode (use compiled JS)
+    ? path.join(process.cwd(), "/src/workers", "async-queue-worker.ts") // Dev mode (use ts-node)
+    : path.join(process.cwd(), "/dist/workers", "async-queue-worker.js"); // Prod mode (use compiled JS)
 
 const worker = new Worker(workerPath, {
    execArgv: isDev ? ["--require", "ts-node/register"] : []
@@ -35,11 +35,11 @@ const processQueue = (): void => {
         return;
     }
 
-    console.log(`Processing queue: ${queue.length} items queued`);
-    console.log(`Current job: ${JSON.stringify(queue[0])}`);
-
     busy = true;
     const job = queue.shift()!;
+
+    console.log(`Processing queue: ${queue.length} items queued`);
+    console.log(`Current job: job.id=${job.id}, type=${job.type}`);
 
     const cleanup = () => {
         worker.off('message', handleMessage);
@@ -49,13 +49,13 @@ const processQueue = (): void => {
     };
 
     const handleMessage = (msg: WorkerMessage) => {
-        console.log(`Worker message: ${JSON.stringify(msg)}`);
+        console.log(`Queue received message from worker message. status: ${msg.status}`);
         if (msg.status === "done") {
-            console.log(`Job ${msg.jobId} completed`);
+            //console.log(`Job ${msg.jobId} completed`);
             taskMap.delete(msg.jobId);
             cleanup();
         } else if (msg.status === "callback") {
-            console.log(`Job ${msg.jobId} callback: ${JSON.stringify(msg.message)}`);
+            //console.log(`Job ${msg.jobId} sent callback message`); //: ${JSON.stringify(msg.message)}`);
             const task = taskMap.get(msg.jobId);
             if (task && task.callBack) {
                 task.callBack(msg.message);
@@ -63,7 +63,7 @@ const processQueue = (): void => {
                 console.log(`No callback for job ${msg.jobId}`);
             }
         } else if (msg.status === "error") {
-            console.log(`Job ${msg.jobId} failed with error`);
+            //console.log(`Job ${msg.jobId} failed with error`);
             taskMap.delete(msg.jobId);
             cleanup();
         }

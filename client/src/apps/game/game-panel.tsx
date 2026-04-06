@@ -1,14 +1,15 @@
-import React from "react"
+import React, { useEffect } from "react"
 import './game-panel.css'
 import { retrieveGame } from "./actions"
 import { useDispatch } from "react-redux";
 import { connect } from "../../api/web-socket";
-import { LOAD_GAME } from "../../constants/action-constants";
 import MenuBar from "./components/menubar/menu-bar";
 import ToolBar from "./components/toolbar/tool-bar";
 import SideBar from "./components/sidebar/side-bar";
 import StatusBar from "./components/statusbar/status-bar";
 import Map from "./components/map/map";
+import { RootState, useAppSelector } from "../../constants/store";
+import { ActionType } from "../../shared/types/action-types";
 
 let ignore = false;
 
@@ -49,7 +50,11 @@ const getUrlVars = (): UrlParameters => {
 export const GamePanel = () => {
     const dispatch = useDispatch();
 
-    React.useEffect(() => {
+    const refreshGame = useAppSelector((state: RootState) => state.refreshGame);
+    const currentPlayerId = useAppSelector((state: RootState) => state.currentPlayerId);
+    const gameId = useAppSelector((state: RootState) => state.id);
+
+    useEffect(() => {
         if (!ignore) {
             ignore = true;
             const parameters = getUrlVars();
@@ -69,12 +74,25 @@ export const GamePanel = () => {
 
                 connect(gameId);
 
-                dispatch({ type: LOAD_GAME, payload: game });
+                dispatch({ type: ActionType.LOAD_GAME, payload: game });
             }).catch(error => {
                 console.log(error);
             });
         }
     });
+
+    useEffect(() => {
+        if (refreshGame && currentPlayerId) {
+            setTimeout(() => {
+                retrieveGame(gameId, currentPlayerId).then(game => {
+                    console.log(`retrieved game: ${game.id}`);
+                    dispatch({ type: ActionType.LOAD_GAME, payload: game });
+                }).catch(error => {
+                    console.log(error);
+                });
+            }, 1000);
+        }
+    }, [refreshGame, gameId, currentPlayerId, dispatch]);
 
     return (
         <div className="game-panel">

@@ -1,7 +1,5 @@
-import { readGame } from './utils/file-utils';
-
 const gameId = "75";
-const gameState = readGame(gameId);
+//const gameState = readGame(gameId);
 
 //const player = getPlayer(gameState.teams, "Bot2");
 

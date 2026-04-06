@@ -4,7 +4,7 @@
 import { parentPort } from "worker_threads";
 import { consoleLogger, stringifyArgs } from "../utils/logger";
 import type { Job, WorkerMessage } from "../types/server-types";
-import { putGame } from "../tasks/put-game-task";
+import { TaskFunctionMap } from "../tasks/tasks";
 
 if (!parentPort) {
   throw new Error("This file should be run as a Worker Thread.");
@@ -17,21 +17,19 @@ parentPort?.on("message", (job: Job) => {
   console.error = (...args) => consoleLogger.error(stringifyArgs(args));
   console.debug = (...args) => consoleLogger.debug(stringifyArgs(args));
 
-  console.log("Worker received message:", JSON.stringify(job));
+  console.log(`Worker received job ${job.id} from queue.  Job type ${job.type}`); //, JSON.stringify(job));
 
-  const callBack = (message: any) => {
-    console.log(`Worker received message from task ${job.id} ${JSON.stringify(message)}`);
+  const passThroughCallBack = (message: any) => {
+    //console.log(`Worker received message from task ${job.id} ${JSON.stringify(message)}`);
     parentPort?.postMessage({ status: "callback", jobId: job.id, message } as WorkerMessage);
   };
 
-  switch (job.type) {
-    case "PUT_GAME":
-      putGame(job.payload, callBack);
-      parentPort?.postMessage({ status: "done", jobId: job.id } as WorkerMessage);
-      break;
-    default:
-      console.error("Unknown task type:", job.type);
-      parentPort?.postMessage({ status: "error", jobId: job.id, message: "Unknown task type" } as WorkerMessage);
-      break;
+  const task = TaskFunctionMap[job.type as keyof typeof TaskFunctionMap];
+  if (task) {
+    task(job.payload, passThroughCallBack);
+    parentPort?.postMessage({ status: "done", jobId: job.id } as WorkerMessage);
+  } else {
+    console.error("Unknown task type:", job.type);
+    parentPort?.postMessage({ status: "error", jobId: job.id, message: "Unknown task type" } as WorkerMessage);
   }
 });

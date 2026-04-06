@@ -8,7 +8,7 @@ export const InitialGameState: GameState = {
         active: true,
         id: "0",
         name: "Bill",
-        turnStatus: PlayerTurnStatus.NONE,
+        turnStatus: PlayerTurnStatus.STARTED,
         color: PlayerColor.BLUE,
         index: 0
     }],
@@ -25,5 +25,11 @@ export const InitialGameState: GameState = {
     refreshGame: false,
     turn: 0,
     weaponEffectMap: {},
-    monsterTurnStatus: PlayerTurnStatus.NONE
+    monsterTurnStatus: PlayerTurnStatus.STARTED,
+    replay: {
+        show: false,
+        playing: false,
+        index: 0,
+        replayActions: []
+    }
 }

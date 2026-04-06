@@ -1,9 +1,9 @@
 import store from '../constants/store';
 import Pusher from 'pusher-js';
-import { UPDATE_CONNECTED_CLIENT_COUNT } from '../constants/action-constants';
 import { postData } from './api-utils';
+import { ActionType } from '../shared/types/action-types';
 
-let socketId: string | undefined = undefined;
+export let socketId: string | undefined = undefined;
 
 //todo: is that a key? Should it be in env file instead?
 const pusher = new Pusher('f24e380aed4ddc2c0392', {
@@ -20,12 +20,13 @@ export const connect = (gameId: string) => {
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     channel.bind('message', (data: any) => {
+        console.log(`Received message from Pusher: ${JSON.stringify(data)}`);
         store.dispatch({ ...data, suppressBroadcast: true });
     });
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     channel.bind("pusher:subscription_count", (data: any) => {
-        store.dispatch({ type: UPDATE_CONNECTED_CLIENT_COUNT, payload: data.subscription_count });
+        store.dispatch({ type: ActionType.UPDATE_CONNECTED_CLIENT_COUNT, payload: data.subscription_count });
     });
 }
 

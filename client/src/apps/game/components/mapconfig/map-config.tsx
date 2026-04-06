@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import './map-config.css';
-import { Coord, LocationMap, Polygon } from '../../../../shared/types/game-types';
+import { Coord, Polygon } from '../../../../shared/types/game-types';
 import { RootState, useAppDispatch, useAppSelector } from '../../../../constants/store';
-import { SELECT_LOCATION } from '../../../../constants/action-constants';
 import { ScenarioData } from '../../../../constants/game-constants';
 
 interface PropTypes {
@@ -28,91 +27,91 @@ export const MapConfig = (props: PropTypes) => {
     const [points, setPoints] = useState<Coord[]>([]);
 
     const scale = useAppSelector((state: RootState) => state.mapScale);
-    const locationMap = useAppSelector((state: RootState) => ScenarioData.board.locationMap);
+    const locationMap = useAppSelector((state: RootState) => ScenarioData.board.areaDefinitionMap);
 
 
-    const renderLocations = (locationMap: LocationMap) => {
-        const keys = Object.keys(locationMap);
-        console.log(`location count: ${keys.length}`);
-        return (
-            <select name="location" size={20} onChange={(event) => { setCurrentLocationId(event.target.value) }}>
-                {keys.map((locationId: string, index: number) => {
-                    const location = locationMap[locationId];
-                    return (
-                        <option value={location.id} key={index}>({location.id}) {location.name}</option>
-                    )
-                })}
-            </select>
-        );
-    }
+    // const renderLocations = (locationMap: LocationMap) => {
+    //     const keys = Object.keys(locationMap);
+    //     console.log(`location count: ${keys.length}`);
+    //     return (
+    //         <select name="location" size={20} onChange={(event) => { setCurrentLocationId(event.target.value) }}>
+    //             {keys.map((locationId: string, index: number) => {
+    //                 const location = locationMap[locationId];
+    //                 return (
+    //                     <option value={location.id} key={index}>({location.id}) {location.name}</option>
+    //                 )
+    //             })}
+    //         </select>
+    //     );
+    // }
 
-    const renderEditPanel = (locationMap: LocationMap, locationId: string) => {
-        if (currentLocationId !== '') {
-            return (
-                <div className="map-config-edit-panel">
-                    <hr />
-                    id: {locationId}<br />
-                    name: {locationMap[locationId].name} <br /><br />
-                    <button onClick={() => handleStartPolygon()}>start polygon</button><br />
-                    <button onClick={() => handleEndPolygon()}>end polygon</button><br /><br />
-                    <button onClick={() => handleCrewBox()}>set crew box</button><br />
-                    <button onClick={() => handleMonsterBox()}>set monster box</button><br />
-                    <button onClick={() => handleWeaponBox(0)}>set weapon 0</button><br />
-                    <button onClick={() => handleWeaponBox(1)}>set weapon 1</button><br /><br />
-                    <button onClick={() => handleDump()}>dump</button>
-                </div>
-            );
-        } else {
-            return (<div></div>);
-        }
-    }
+    // const renderEditPanel = (locationMap: LocationMap, locationId: string) => {
+    //     if (currentLocationId !== '') {
+    //         return (
+    //             <div className="map-config-edit-panel">
+    //                 <hr />
+    //                 id: {locationId}<br />
+    //                 name: {locationMap[locationId].name} <br /><br />
+    //                 <button onClick={() => handleStartPolygon()}>start polygon</button><br />
+    //                 <button onClick={() => handleEndPolygon()}>end polygon</button><br /><br />
+    //                 <button onClick={() => handleCrewBox()}>set crew box</button><br />
+    //                 <button onClick={() => handleMonsterBox()}>set monster box</button><br />
+    //                 <button onClick={() => handleWeaponBox(0)}>set weapon 0</button><br />
+    //                 <button onClick={() => handleWeaponBox(1)}>set weapon 1</button><br /><br />
+    //                 <button onClick={() => handleDump()}>dump</button>
+    //             </div>
+    //         );
+    //     } else {
+    //         return (<div></div>);
+    //     }
+    // }
 
-    const handleCrewBox = () => {
-        if (points.length > 0) {
-            const polygon = createBox(points[0]);
-            const location = { ...locationMap![currentLocationId] };
-            location.crewStackPolygon = polygon;
-            dispatch({ type: SELECT_LOCATION, payload: location });
-        } else {
-            const location = { ...locationMap![currentLocationId] };
-            location.crewStackPolygon = [];
-            dispatch({ type: SELECT_LOCATION, payload: location });
-        }
+    // const handleCrewBox = () => {
+    //     if (points.length > 0) {
+    //         const polygon = createBox(points[0]);
+    //         const location = { ...locationMap![currentLocationId] };
+    //         location.crewStackPolygon = polygon;
+    //         dispatch({ type: SELECT_AREA, payload: location });
+    //     } else {
+    //         const location = { ...locationMap![currentLocationId] };
+    //         location.crewStackPolygon = [];
+    //         dispatch({ type: SELECT_AREA, payload: location });
+    //     }
 
-        setPoints([]);
-    }
+    //     setPoints([]);
+    // }
 
-    const handleMonsterBox = () => {
-        if (points.length > 0) {
-            const polygon = createBox(points[0]);
-            const location = { ...locationMap![currentLocationId] };
-            location.monsterStackPolygon = polygon;
-            dispatch({ type: SELECT_LOCATION, payload: location });
-        } else {
-            const location = { ...locationMap![currentLocationId] };
-            location.monsterStackPolygon = [];
-            dispatch({ type: SELECT_LOCATION, payload: location });
-        }
+    // const handleMonsterBox = () => {
+    //     if (points.length > 0) {
+    //         const polygon = createBox(points[0]);
+    //         const location = { ...locationMap![currentLocationId] };
+    //         location.monsterStackPolygon = polygon;
+    //         dispatch({ type: SELECT_AREA, payload: location });
+    //     } else {
+    //         const location = { ...locationMap![currentLocationId] };
+    //         location.monsterStackPolygon = [];
+    //         dispatch({ type: SELECT_AREA, payload: location });
+    //     }
 
-        setPoints([]);
-    }
+    //     setPoints([]);
+    // }
 
-    const handleWeaponBox = (id: number) => {
-        if (points.length > 0) {
-            const polygon = createBox(points[0]);
-            const location = { ...locationMap![currentLocationId] };
-            //location.weaponStackPolygons = location.weaponStackPolygons ? [...location.weaponStackPolygons] : [];
-            //location.weaponStackPolygons[id] = polygon;
-            dispatch({ type: SELECT_LOCATION, payload: location });
-        } else {
-            const location = { ...locationMap![currentLocationId] };
-            //location.weaponStackPolygons = location.weaponStackPolygons ? [...location.weaponStackPolygons] : [];
-            //location.weaponStackPolygons[id] = [];
-            dispatch({ type: SELECT_LOCATION, payload: location });
-        }
+    // const handleWeaponBox = (id: number) => {
+    //     if (points.length > 0) {
+    //         const polygon = createBox(points[0]);
+    //         const location = { ...locationMap![currentLocationId] };
+    //         //location.weaponStackPolygons = location.weaponStackPolygons ? [...location.weaponStackPolygons] : [];
+    //         //location.weaponStackPolygons[id] = polygon;
+    //         dispatch({ type: SELECT_AREA, payload: location });
+    //     } else {
+    //         const location = { ...locationMap![currentLocationId] };
+    //         //location.weaponStackPolygons = location.weaponStackPolygons ? [...location.weaponStackPolygons] : [];
+    //         //location.weaponStackPolygons[id] = [];
+    //         dispatch({ type: SELECT_AREA, payload: location });
+    //     }
 
-        setPoints([]);
-    }
+    //     setPoints([]);
+    // }
 
     const handleDump = () => {
         console.log(JSON.stringify(locationMap));
@@ -122,14 +121,14 @@ export const MapConfig = (props: PropTypes) => {
         setPoints([]);
     }
 
-    const handleEndPolygon = () => {
-        if (currentLocationId !== undefined) {
-            const location = { ...locationMap![currentLocationId] };
-            location.polygon = points;
-            dispatch({ type: SELECT_LOCATION, payload: location });
-            setPoints([]);
-        }
-    }
+    // const handleEndPolygon = () => {
+    //     if (currentLocationId !== undefined) {
+    //         const location = { ...locationMap![currentLocationId] };
+    //         location.polygon = points;
+    //         dispatch({ type: SELECT_AREA, payload: location });
+    //         setPoints([]);
+    //     }
+    // }
 
     const handleClick = (coord: Coord) => {
         console.log(`received click (${coord.x},${coord.y})`);
@@ -147,8 +146,8 @@ export const MapConfig = (props: PropTypes) => {
             <div className="map-config">
                 Scale: {scale}<br />
                 Locations<br />
-                {renderLocations(locationMap)}
-                {renderEditPanel(locationMap, currentLocationId)}
+                {/* {renderLocations(locationMap)}
+                {renderEditPanel(locationMap, currentLocationId)} */}
             </div>
         );
     } else {

@@ -1,4 +1,6 @@
-import { GameEntry, SaveGameData, ScenarioEntry } from '../shared/types/game-types'
+import { Action } from '../shared/types/action-types'
+import { GameEntry, GameState, ScenarioEntry } from '../shared/types/game-types'
+import { TaskIds } from '../tasks/tasks'
 
 export interface GameList {
     nextId: number
@@ -10,13 +12,28 @@ export interface ScenarioList {
     scenarios: ScenarioEntry[]
 }
 
-export interface PutGameData {
+// export interface PutGameData {
+//     gameId: string
+//     playerId: string
+//     saveGameData: SaveGameData
+// }
+
+// export interface Action {
+//     type: string
+//     payload: any
+// }
+
+export interface ActionData {
     gameId: string
-    playerId: string
-    saveGameData: SaveGameData
+    socketId: string
+    action: Action
 }
 
-export type TaskType = "PUT_GAME";
+export interface ReserveWeaponData {
+    gameId: string
+    counterId: string
+    weaponCounterId: string
+}
 
 export type JobStatus = "done" | "callback" | "error";
 
@@ -27,13 +44,31 @@ export interface WorkerMessage {
 }
 
 export interface Task {
-    type: string
+    type: TaskType
     payload: any
     callBack?: (data: any) => void
 }
 
 export interface Job {
     id: string
-    type: string
+    type: TaskType
     payload: any
+}
+
+export type TaskType = typeof TaskIds[keyof typeof TaskIds];
+
+export type GameContainerMap = {
+    [K: string]: GameContainer;
+};
+
+export type GameContainer = {
+  state: GameState
+  saveTimeout: NodeJS.Timeout | null
+  isDirty: boolean
+  lastSave: number
+}
+
+export enum ReplayType {
+    PRE = "pre",
+    POST = "post"
 }

@@ -1,16 +1,16 @@
 import './map.css';
 import React from 'react'
-import { SET_STATUS_MESSAGE, SELECT_LOCATION, MOVE_TO_LOCATION } from '../../../../constants/action-constants';
 import { useAppDispatch, useAppSelector } from '../../../../constants/store';
 import { ImageData, ScenarioData } from '../../../../constants/game-constants';
-import { Coord, CounterMap, LocationMap, Player, Polygon, Stack, StackMap, Location, Aperture } from '../../../../shared/types/game-types';
-import { CREW_STACK_ID_SUFFIX, MONSTER_STACK_ID_SUFFIX, WEAPON_STACK_ID_SUFFIX } from '../../../../shared/constants/game-constants';
+import { Coord, CounterMap, Player, Polygon, Stack, StackMap, AreaDefinition, Aperture, AreaDefinitionMap, Phase } from '../../../../shared/types/game-types';
 import { pointInPolygon } from '../../utils/map-utils';
-import state from 'pusher-js/types/src/core/http/state';
-import { validateMove } from './utils';
+import { sortCounterIdsBySelected, validateMove } from './utils';
+import { sendMessage, socketId } from '../../../../api/web-socket';
+import { putData } from '../../../../api/api-utils';
+import { ActionAddAction, ActionMoveToCoord, ActionType } from '../../../../shared/types/action-types';
 
-const updateCanvas = (canvas: HTMLCanvasElement, scale: number, currentLocationId: string | undefined, stackMap: StackMap, counterMap: CounterMap, 
-    locationMap: LocationMap, selectedCounterIds: string[]) => {
+const updateCanvas = (canvas: HTMLCanvasElement, scale: number, currentAreaId: string | undefined, stackMap: StackMap, counterMap: CounterMap,
+    areaDefinitionMap: AreaDefinitionMap, selectedCounterIds: string[]) => {
     const context: CanvasRenderingContext2D | null = canvas ? canvas.getContext('2d') : null;
     if (context == null) {
         console.log("context undefined");
@@ -38,41 +38,14 @@ const updateCanvas = (canvas: HTMLCanvasElement, scale: number, currentLocationI
     console.log('drawing board');
     context.drawImage(board, 0, 0, boardWidth, boardHeight);
 
-    // console.log('stackMap', stackMap);
-    // console.log('counterMap', counterMap);
-    // console.log('locationMap', locationMap);
+    if (stackMap && counterMap && stackMap) {
+        const areaIds = Object.keys(stackMap);
+        areaIds.forEach((areaId: string) => {
+            const area = stackMap[areaId];
 
-    if (stackMap && counterMap && locationMap) {
-        const locationIds = Object.keys(locationMap);
-        locationIds.forEach((locationId: string) => {
-            const location = locationMap[locationId];
-
-            //if (locationId === currentLocationId) {
-            //    drawPolygon(context, location.crewStackPolygon, scale);
-            //    drawPolygon(context, location.monsterStackPolygon, scale);
-                // if (location.weaponStackPolygons) {
-                //     location.weaponStackPolygons.forEach((polygon: Polygon) => {
-                //         drawPolygon(context, polygon, scale);
-                //     })
-                // }
-            //}
-
-            let stack = stackMap[location.id + CREW_STACK_ID_SUFFIX];
+            let stack = stackMap[area.id];
             if (stack !== undefined) {
-                renderStack(context, scale, location.crewStackPolygon, counterMap, stack, selectedCounterIds)
-            }
-
-            stack = stackMap[location.id + MONSTER_STACK_ID_SUFFIX];
-            if (stack !== undefined) {
-                renderStack(context, scale, location.monsterStackPolygon, counterMap, stack, selectedCounterIds)
-            }
-
-            for (let i = 0; i < location.weaponStacks.length; ++i) {
-                const weaponStack = location.weaponStacks[i];
-                stack = stackMap[location.id + WEAPON_STACK_ID_SUFFIX + `-${weaponStack.id}`];
-                if (stack !== undefined) {
-                    renderStack(context, scale, weaponStack.polygon, counterMap, stack, selectedCounterIds)
-                }
+                renderStack(context, scale, counterMap, stack, selectedCounterIds)
             }
         });
     }
@@ -96,16 +69,15 @@ const drawPolygon = (context: any, polygon: Polygon, scale: number) => {
     context.closePath();
 }
 
-const renderStack = (context: any, scale: number, polygon: Polygon, counters: CounterMap, stack: Stack, selectedCounterIds: string[]) => {
-    if (polygon === undefined || polygon.length === 0 || stack === undefined || stack.counterIds.length === 0) {
+const renderStack = (context: any, scale: number, counters: CounterMap, stack: Stack, selectedCounterIds: string[]) => {
+    if (stack === undefined || stack.counterIds.length === 0) {
         return;
     }
 
-    stack.counterIds.forEach((counterId: string, index: number) => {
-        const counter = counters[counterId];
+    const counterIds = sortCounterIdsBySelected(stack.counterIds, selectedCounterIds).reverse();
 
-        const x = polygon[0].x * scale;
-        const y = polygon[0].y * scale;
+    counterIds.forEach((counterId: string, index: number) => {
+        const counter = counters[counterId];
 
         const imageData = ImageData[counter.imageName];
         if (imageData === undefined) {
@@ -117,6 +89,8 @@ const renderStack = (context: any, scale: number, polygon: Polygon, counters: Co
         if (counterImage && index < 10) {
             const counterWidth = counterImage.naturalWidth * scale * 0.9;
             const counterHeight = counterImage.naturalHeight * scale * 0.9;
+            const x = counter.coord!.x * scale - (counterWidth / 2);
+            const y = counter.coord!.y * scale - (counterHeight / 2);
             context.drawImage(counterImage, x - (index * 3), y - (index * 3), counterWidth, counterHeight);
             if (selectedCounterIds && selectedCounterIds.includes(counterId)) {
                 context.strokeStyle = `rgb(255, 0, 0)`;
@@ -129,80 +103,13 @@ const renderStack = (context: any, scale: number, polygon: Polygon, counters: Co
     });
 }
 
-// const renderThreatData = (context: CanvasRenderingContext2D, starMap: StarMap, threatData: ThreatGraph) => {
-//     if (threatData === undefined) {
-//         return;
-//     }
-
-//     const stars = Object.values(starMap);
-//     stars.forEach(star => {
-//         const starNode = threatData[star.name];
-//         drawStarThreat(context, star, starNode);
-//     });
-// }
-
-// const renderExploration = (context: CanvasRenderingContext2D, starMap: StarMap) => {
-//     const stars = Object.values(starMap);
-//     stars.forEach(star => {
-//         if (star.planets && star.planets.length > 0) {
-//             drawStarExploration(context, star);
-//         } 
-//     });
-// } 
-
-// const renderUnexploredStars = (context: CanvasRenderingContext2D, starMap: StarMap) => {
-//     const stars = Object.values(starMap);
-//     stars.forEach(star => {
-//         if (star.planets === undefined) {
-//             const point = hexToPoint(star.coord.x, star.coord.y);
-//             drawUnexploredStar(context, point);
-//         }
-//     });
-// }
-
-// const renderTaskForces = (context: CanvasRenderingContext2D, taskForces: TaskForce[], teams: Team[], selectedTaskForceIds: string[] | undefined) => {
-//     taskForces.forEach(taskForce => {
-//         if (!taskForce.deleted) {
-//             const point = hexToPoint(taskForce.coord.x, taskForce.coord.y);
-
-//             const inStarHex = findStar(MapData.starMap, taskForce.coord) !== undefined;
-
-//             const player = getPlayer(teams, taskForce.playerId);
-//             if (player === undefined) {
-//                 return;
-//             }
-
-//             drawTaskForce(context, point.x, point.y, taskForce.id, player.color, inStarHex);
-//         }
-//     });
-
-//     if (selectedTaskForceIds) {
-//         selectedTaskForceIds.forEach(id => {
-//             const taskForce = taskForces.find(taskForce => taskForce.id === id);
-//             if (taskForce && taskForce.destinationCoord && taskForce.path) {
-//                 const path = taskForce.path;
-//                 path.elements.forEach(element => {
-//                     drawPathHex(context, element);
-//                 })
-//             }
-//         });
-//     }
-// }
-
-// const getHex = (event: React.MouseEvent): Coord | undefined => {
-//     const posX = event.nativeEvent.offsetX;
-//     const posY = event.nativeEvent.offsetY;
-//     const coord = pointToHex(posX, posY);
-//     return coord;
-// }
-
-const getLocation = (locationMap: LocationMap | undefined, coord: Coord): Location | undefined => {
-    if (locationMap !== undefined) {
-        const keys = Object.keys(locationMap);
+const getArea = (areaDefinitionMap: AreaDefinitionMap | undefined, coord: Coord): AreaDefinition | undefined => {
+    if (areaDefinitionMap !== undefined) {
+        const keys = Object.keys(areaDefinitionMap);
         for (let i = 0; i < keys.length; ++i) {
-            const location = locationMap[keys[i]];
-            if (pointInPolygon(location.polygon, coord)) {
-                return location;
+            const areaDefinition = areaDefinitionMap[keys[i]];
+            if (pointInPolygon(areaDefinition.polygon, coord)) {
+                return areaDefinition;
             }
         }
     }
@@ -214,49 +121,42 @@ const getLocation = (locationMap: LocationMap | undefined, coord: Coord): Locati
 const Map = () => {
     const dispatch = useAppDispatch();
 
-    // const selectedTaskForceIds = useAppSelector(state => state.selectedTaskForceIds);
     const selectedCounterIds = useAppSelector(state => state.selectedCounterIds);
-    const currentLocationId = useAppSelector(state => state.currentLocationId);
+    const currentAreaId = useAppSelector(state => state.currentAreaId);
     const stackMap = useAppSelector(state => state.stackMap);
     const counterMap = useAppSelector(state => state.counterMap);
-    // const taskForceMap = useAppSelector(state => state.taskForceMap);
-    // const colonyMap = useAppSelector(state => state.colonyMap);
-    // const teams = useAppSelector(state => state.teams);
-    const turn = useAppSelector(state => state.turn);
+    const phase = useAppSelector(state => state.phase);
     const mapScale = useAppSelector(state => state.mapScale);
-    // const showExploration = useAppSelector(state => state.showExploration);
-    // const isProductionYear = useAppSelector(state => state.isProductionYear);
-    // const currentPlayerId = useAppSelector(state => state.currentPlayerId);
-    // const threatData = useAppSelector(state => state.threatData);
-    const locationMap = ScenarioData.board.locationMap;
+    const areaDefinitionMap = ScenarioData.board.areaDefinitionMap;
+    const gameId = useAppSelector(state => state.id);
+    const replay = useAppSelector(state => state.replay);
 
     let player: Player | undefined = undefined;
-    // if (teams && currentPlayerId) {
-    //     player = getPlayer(teams, currentPlayerId);
-    // }
 
     const canvasRef = React.createRef<HTMLCanvasElement>();
     //let clickTimer: NodeJS.Timeout | undefined = undefined;
 
-    // const taskForces = taskForceMap ? Object.values(taskForceMap) : [];
-    // const colonies = colonyMap ? Object.values(colonyMap) : [];
-
     React.useEffect(() => {
         if (canvasRef.current) {
             const canvas: HTMLCanvasElement = canvasRef.current;
-            updateCanvas(canvas, mapScale, currentLocationId, stackMap, counterMap, locationMap, selectedCounterIds);
+            if (replay && replay.show && replay.activeState) {
+                updateCanvas(canvas, mapScale, currentAreaId, replay.activeState.stackMap, replay.activeState.counterMap, areaDefinitionMap, selectedCounterIds);
+                return;
+            } else {
+                updateCanvas(canvas, mapScale, currentAreaId, stackMap, counterMap, areaDefinitionMap, selectedCounterIds);
+            }
         }
-    }, [canvasRef, currentLocationId, mapScale, stackMap, locationMap, selectedCounterIds]);
+    }, [canvasRef, currentAreaId, mapScale, stackMap, areaDefinitionMap, selectedCounterIds, replay]);
 
     const handleLeftClick = (event: React.MouseEvent, scale: number) => {
         const posX = event.nativeEvent.offsetX;
         const posY = event.nativeEvent.offsetY;
 
-        const location = getLocation(locationMap, { x: posX / scale, y: posY / scale });
-        console.log(`clicked on location: ${location ? location.id : 'not found'}`);
+        const area = getArea(areaDefinitionMap, { x: posX / scale, y: posY / scale });
+        console.log(`clicked on location: ${area ? area.id : 'not found'}`);
 
-        if (location !== undefined) {
-            dispatch({ type: SELECT_LOCATION, payload: location.id });
+        if (area !== undefined) {
+            dispatch({ type: ActionType.SELECT_AREA, payload: { areaId: area.id, clearSelectedCounterIds: true } });
         }
     }
 
@@ -266,15 +166,34 @@ const Map = () => {
         const posX = event.nativeEvent.offsetX;
         const posY = event.nativeEvent.offsetY;
 
-        const newLocation = getLocation(locationMap, { x: posX / scale, y: posY / scale });
+        const newArea = getArea(areaDefinitionMap, { x: posX / scale, y: posY / scale });
 
-        const validationError = validateMove(selectedCounterIds, currentLocationId, newLocation?.id, locationMap, counterMap, stackMap);
-        if (validationError) {
-            dispatch({type: SET_STATUS_MESSAGE, payload: validationError});
+        if (phase !== Phase.MOVE) {
+            dispatch({ type: ActionType.SET_STATUS_MESSAGE, payload: 'It is not the movement phase' });
             return;
         }
 
-        dispatch({ type: MOVE_TO_LOCATION, payload: newLocation?.id });
+        const validationError = validateMove(selectedCounterIds, currentAreaId, newArea?.id, areaDefinitionMap, counterMap, stackMap);
+        if (validationError) {
+            dispatch({ type: ActionType.SET_STATUS_MESSAGE, payload: validationError });
+            return;
+        }
+
+        const fromCoords = selectedCounterIds.map(counterId => {
+            const counter = counterMap[counterId];
+            return counter.coord!
+        });
+
+        const moveToAction: ActionMoveToCoord = { type: ActionType.MOVE_TO_COORD, payload: { counterIds: [...selectedCounterIds], fromAreaId: currentAreaId!, fromCoords: fromCoords, toAreaId: newArea!.id, toCoord: { x: posX / scale, y: posY / scale } } };
+        console.log(JSON.stringify(moveToAction));
+        putData(`api/games/${gameId}/action`, { socketId, action: moveToAction }).then((resp) => {
+            dispatch({ type: ActionType.SELECT_AREA, payload: { areaId: newArea?.id, clearSelectedCounterIds: false } });
+            dispatch(moveToAction);
+            const addActionAction: ActionAddAction = { type: ActionType.ADD_ACTION, payload: { counterIds: selectedCounterIds, actionToAdd: moveToAction } };
+            dispatch(addActionAction);
+        }).catch((resp) => {
+            dispatch({ type: ActionType.SET_STATUS_MESSAGE, payload: resp.message });
+        });
     }
 
     return (

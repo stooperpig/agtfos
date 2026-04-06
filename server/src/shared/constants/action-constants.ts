@@ -1,0 +1,19 @@
+// export const LOAD_GAME = 'LOAD_GAME';
+// export const REFRESH_GAME = "REFRESH_GAME";
+// export const CLEAR_PLAN = "CLEAR_PLAN";
+// export const SELECT_AREA = "SELECT_AREA"
+// export const SELECT_COUNTER = "SELECT_COUNTER";
+// export const DESELECT_COUNTER = "DESELECT_COUNTER";
+// //export const MOVE_TO_COORD = "MOVE_TO_COORD";
+// //export const GRAB_WEAPON = "GRAB_WEAPON";
+// //export const DROP_WEAPON = "DROP_WEAPON";
+// export const SET_STATUS_MESSAGE = "SET_STATUS_MESSAGE";
+// export const PHASE_COMPLETE = "PHASE_COMPLETE";
+// export const UPDATE_CONNECTED_CLIENT_COUNT = "UPDATE_CONNECTED_CLIENT_COUNT";
+
+// export const REPLAY_SET_INDEX = "REPLAY_SET_INDEX";
+// export const REPLAY_STEP_BACKWARD = "REPLAY_STEP_BACKWARD";
+// export const REPLAY_STOP = "REPLAY_STOP";
+// export const REPLAY_PAUSE = "REPLAY_PAUSE";
+// export const REPLAY_PLAY = "REPLAY_PLAY";
+// export const REPLAY_SHOW = "REPLAY_SHOW";

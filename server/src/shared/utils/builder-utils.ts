@@ -23,7 +23,8 @@ export const createGameStateBuilder = (
     weaponEffectMap: {},
     mapScale: 1,
     selectedCounterIds: [],
-    monsterTurnStatus: PlayerTurnStatus.NONE
+    monsterTurnStatus: PlayerTurnStatus.STARTED,
+    // weaponStateMap: {}
   };
 
   const builder = {
@@ -62,7 +63,7 @@ export const createPlayerBuilder = (id: string, name: string, index: number, tea
     index,
     color,
     active: true,
-    turnStatus: PlayerTurnStatus.NONE,
+    turnStatus: PlayerTurnStatus.STARTED,
   };
 
   const builder = {

@@ -1,123 +1,83 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import './menu.css';
 import './drop-down-menu.css';
 import DropdownMenu from './drop-down-menu';
 import { useAppDispatch, useAppSelector } from '../../../../constants/store';
-import { GameState, PlayerTurnStatus, SaveGameData } from '../../../../shared/types/game-types';
-import { SET_SHOW_REPORTS, SET_STATUS_MESSAGE, SET_TURN_COMPLETED } from '../../../../constants/action-constants';
-
-// import ReportsModal from '../modal/reports-modal/reports-modal';
-// import StatusModal from '../modal/status-modal/status-modal';
-// import ProductionModal from '../modal/production-modal/production-modal';
-import cloneDeep from 'lodash.clonedeep';
-import { handleSaveGame } from './utils';
-// import PlayerResignModal from '../modal/player-resign-modal/player-resign-modal';
+import { GameState, Replay } from '../../../../shared/types/game-types';
+import { getData, putData } from '../../../../api/api-utils';
+import { socketId } from '../../../../api/web-socket';
+import { ActionPhaseComplete, ActionRefreshReplay, ActionReplayShow, ActionSetStatusMessage, ActionType } from '../../../../shared/types/action-types';
 
 const Menu = () => {
     const dispatch = useAppDispatch();
 
-    //const [showReports, setShowReports] = useState<boolean>(false);
-    const [showProduction, setShowProduction] = useState<boolean>(false);
-    const [showStatus, setShowStatus] = useState<boolean>(false);
     const [showResign, setShowResign] = useState<boolean>(false);
-
+    const phase = useAppSelector((state: GameState) => state.phase);
     const gameId = useAppSelector((state: GameState) => state.id);
     const currentPlayerId = useAppSelector((state: GameState) => state.currentPlayerId);
-    const counterMap = useAppSelector((state: GameState) => state.counterMap);
-    // const colonyMap = useAppSelector((state: GameState) => state.colonyMap);
-    // const teams = useAppSelector((state: GameState) => state.teams);
-    // const taskForceMap = useAppSelector((state: GameState) => state.taskForceMap);
-    const isProductionYear = false; //useAppSelector(state => state.isProductionYear);
-
-    // useEffect(() => {
-    //     setShowProduction(isProductionYear);
-    // }, [isProductionYear]);
-
-    //let production: Production | undefined;
-    let showReports = false;
-    // if (teams && currentPlayerId) {
-    //     const player = getPlayer(teams, currentPlayerId);
-    //     if (player) {
-    //         production = player.production;
-    //         if (production) {
-    //             production = cloneDeep(production);
-    //         }
-    //         showReports = player.showReports;
-    //     }
-    // }
-
-    // if (production === undefined) {
-    //     production = { colonyProductionMap: {}, technologyResearchMap: {} }
-    // }
+    const replay = useAppSelector((state: GameState) => state.replay);
 
     const toggleModal = (value: boolean, setter: React.Dispatch<React.SetStateAction<boolean>>) => {
         setter(!value);
     }
 
-    const handleShowReports = (value: boolean) => {
-        dispatch({ type: SET_SHOW_REPORTS, payload: value });
-    }
-
-    // const productionUpdateFunction = (completeTurn: boolean, colonyProductionMap: ColonyProductionMap, technologyResearchMap: TechnologyResearchMap) => {
-    //     dispatch({ type: SET_PRODUCTION, payload: { colonyProductionMap, technologyResearchMap } });
-    // }
-
     const gameMenu = {
         title: 'Game',
         subItems: [{
-            title: 'Save Game', handler: () => { handleSaveGame(dispatch, false, gameId, currentPlayerId, counterMap); }
-        }, {
-            title: 'Resign', handler: () => { toggleModal(showResign, setShowResign) }
+            title: 'Next Phase', handler: () => {
+                const action: ActionPhaseComplete = { type: ActionType.PHASE_COMPLETE, payload: { playerId: currentPlayerId } };
+                putData(`/api/games/${gameId}/action`, { socketId, action }).then(() => {
+                    dispatch(action);
+                }).catch((resp) => {
+                    const action: ActionSetStatusMessage = { type: ActionType.SET_STATUS_MESSAGE, payload: resp.message }
+                    dispatch(action);
+                });
+            }
         }]
     };
 
-    // const productionMenu = {
-    //     title: 'Production Plan',
-    //     subItems: [],
-    //     handler: () => { toggleModal(showProduction, setShowProduction) }
-    // };
+    const replayMenu = {
+        title: replay?.show ? `Hide Replay ${replay.show}` : `Show Replay (${replay?.show})`,
+        subItems: [],
+        handler: () => {
+            if (replay === undefined) {
+                getData(`/api/games/${gameId}/replay`).then((resp) => {
+                    const refreshAction: ActionRefreshReplay = { type: ActionType.REFRESH_REPLAY, payload: resp as Replay };
+                    dispatch(refreshAction);
+                    const replayShowAction: ActionReplayShow = { type: ActionType.REPLAY_SHOW, payload: true }
+                    dispatch(replayShowAction);
+                }).catch((resp) => {
+                    const action: ActionSetStatusMessage = { type: ActionType.SET_STATUS_MESSAGE, payload: resp.message }
+                    dispatch(action);
+                });
 
-    // const stateMenu = {
-    //     title: 'Status',
-    //     subItems: [],
-    //     handler: () => { toggleModal(showStatus, setShowStatus); }
-    // };
-
-    // const reportMenu = {
-    //     title: 'Reports',
-    //     subItems: [],
-    //     handler: () => { handleShowReports(!showReports) }
-    // }
-
-    const renderGameMenu = () => {
-        if (!isProductionYear) {
-            gameMenu.subItems.splice(1, 0, {
-                title: 'Complete Turn',
-                handler: () => { handleSaveGame(dispatch, true, gameId, currentPlayerId, counterMap); }
-            });
+            } else {
+                const action: ActionReplayShow = { type: ActionType.REPLAY_SHOW, payload: replay?.show ? false : true }
+                dispatch(action);
+            }
         }
+    };
 
-        return (<DropdownMenu menuItem={gameMenu} />);
-    }
-
-    // const renderProductionMenu = () => {
-    //     if (isProductionYear) {
-    //         return (<DropdownMenu menuItem={productionMenu} />);
-    //     } else {
-    //         return null;
+    // const renderReplayMenu = () => {
+    //     if (replay !== undefined && replay.replayElements !== undefined && (replay.replayElements.movementElements.length > 0 || replay?.replayElements.attackElements.length > 0)) {
+    //         return(
+    //             <DropdownMenu menuItem={replayMenu} />
+    //         )
     //     }
+    //     return null;
     // }
+    const capitalize = (str: string): string => {
+        if (!str) return str;
+        return str[0].toUpperCase() + str.slice(1).toLowerCase();
+    };
 
     return (
         <div className="menu">
-            {renderGameMenu()}
-            {/* <DropdownMenu menuItem={stateMenu} /> */}
-            {/* <DropdownMenu menuItem={reportMenu} /> */}
-            {/* {renderProductionMenu()} */}
-            {/* <ReportsModal show={showReports} closeHandler={() => handleShowReports(false)} />
-            <StatusModal show={showStatus} closeHandler={() => toggleModal(showStatus, setShowStatus)} />
-            <ProductionModal show={showProduction} closeHandler={() => toggleModal(showProduction, setShowProduction)} production={production} updateFunction={productionUpdateFunction} />
-            <PlayerResignModal show={showResign} closeHandler={() => { toggleModal(showResign, setShowResign) }} /> */}
+            <DropdownMenu menuItem={gameMenu} />
+            <DropdownMenu menuItem={replayMenu} />
+            <div className="menu-right-child">
+                <span className="menu-phase">{capitalize(phase)} Phase</span>
+            </div>
         </div>
     );
 }

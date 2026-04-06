@@ -53,7 +53,12 @@ export const postData = async <T>(url = "", data = {}): Promise<T> => {
     });
 
     if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
+        const errorData = await response.json();
+        if (errorData) {
+            throw new Error(errorData.message);
+        } else {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
     }
 
     return response.json();
@@ -74,7 +79,12 @@ export const putData = async <T>(url = "", data = {}): Promise<T> => {
     });
 
     if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
+        const errorData = await response.json();
+        if (errorData) {
+            throw new Error(errorData.message);
+        } else {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
     }
 
     return response.json();
@@ -95,7 +105,12 @@ export const patchData = async <T>(url = "", data = {}): Promise<T> => {
     });
 
     if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
+        const errorData = await response.json();
+        if (errorData) {
+            throw new Error(errorData.message);
+        } else {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
     }
 
     return response.json();

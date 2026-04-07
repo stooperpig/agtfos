@@ -256,10 +256,10 @@ export interface ReplayMovementElement {
     counterId: string;
     fromAreaId: string;
     fromCoord: Coord;
-    toAreaId: string;
-    toCoord: Coord;
-    weaponCounterId: string;
-    movementCost: 0;
+    toAreaId?: string;
+    toCoord?: Coord;
+    weaponCounterId?: string;
+    movementCost: number;
     engagedData: { [key:string]: boolean };   //todo: this probably needs to set property on all effected counters [] not just the moving counter,  
     spottedData: { [key:string]: boolean };   //todo: this probably needs to set property on all effected counters (map) not just the moving counter,
 }

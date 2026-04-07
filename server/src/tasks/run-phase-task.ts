@@ -44,6 +44,10 @@ export const runPhase = (data: any, postMessage: (data: any) => void): void => {
             const replayMovementElements = executeMovementPhase(gameState, currentCrewAndMonsterCounters);
             console.log(`Created ${replayMovementElements.length} replay movement elements for game ${gameState.id}`);
             replayElements.movementElements = replayMovementElements;
+        } else {
+            const replayAttackElements = executeAttackPhaseActions(gameState);
+            console.log(`Created ${replayAttackElements.length} replay attack elements`);
+            replayElements.attackElements = replayAttackElements;
         }
         // else {
         //     const replayAttackElements = executeAttackPhaseActions(gameState);
@@ -90,6 +94,11 @@ const resetCounters = (gameState: GameState) => {
 
 const executeAttackPhaseActions = (gameState: GameState): ReplayAttackElement[] => {
     console.log(`Executing attack phase for game ${gameState.id}`);
+
+    //clear engaged flag for all counters
+    Object.values(gameState.counterMap).forEach(counter => {
+        counter.engaged = false;
+    });
     return [];
 }
 
@@ -109,16 +118,15 @@ const executeMovementPhase = (gameState: GameState, currentCrewAndMonsterCounter
         const action = counter.actions.find(action => action.type === ActionType.DROP_WEAPON);
         console.log(`Drop action: ${action}`)
         if (action) {
-            processDropWeapon(gameState, action as ActionDropWeapon);
+            const dropAction = action as ActionDropWeapon;
+            processDropWeapon(gameState, dropAction);
             const replayMovementElement: ReplayMovementElement = {
                 type: ActionType.DROP_WEAPON,
-                counterId: action.payload.counterId,
-                fromAreaId: action.payload.fromAreaId,
-                fromCoord: action.payload.fromCoord,
-                toAreaId: action.payload.toAreaId,
-                toCoord: action.payload.toCoord,
-                weaponCounterId: action.payload.weaponCounterId,
-                movementCost: 0,
+                counterId: dropAction.payload.crewCounterId,
+                fromAreaId: dropAction.payload.fromAreaId,
+                fromCoord: dropAction.payload.fromCoord,
+                weaponCounterId: dropAction.payload.weaponCounterId,
+                movementCost: dropAction.payload.movementCost,
                 engagedData: {},
                 spottedData: {}
             };
@@ -134,16 +142,15 @@ const executeMovementPhase = (gameState: GameState, currentCrewAndMonsterCounter
         const action = counter.actions.find(action => action.type === ActionType.GRAB_WEAPON);
         console.log(`Grab action: ${action}`)
         if (action) {
-            processGrabWeapon(gameState, action as ActionGrabWeapon);
+            const grabAction = action as ActionGrabWeapon;
+            processGrabWeapon(gameState, grabAction);
             const replayMovementElement: ReplayMovementElement = {
                 type: ActionType.GRAB_WEAPON,
-                counterId: action.payload.counterId,
-                fromAreaId: action.payload.fromAreaId,
-                fromCoord: action.payload.fromCoord,
-                toAreaId: action.payload.toAreaId,
-                toCoord: action.payload.toCoord,
-                weaponCounterId: action.payload.weaponCounterId,
-                movementCost: 0,
+                counterId: grabAction.payload.crewCounterId,
+                fromAreaId: grabAction.payload.fromAreaId,
+                fromCoord: grabAction.payload.fromCoord,
+                weaponCounterId: grabAction.payload.weaponCounterId,
+                movementCost: grabAction.payload.movementCost,
                 engagedData: {},
                 spottedData: {}
             };
@@ -167,18 +174,20 @@ const executeMovementPhase = (gameState: GameState, currentCrewAndMonsterCounter
                 const action = counter.actions[index];
                 console.log(`processing action ${index} for counter ${counter.id}`);
                 if (action.type === ActionType.MOVE_TO_COORD) {
-                    processMoveToCoord(gameState, action as ActionMoveToCoord);
+                    const moveToAction = action as ActionMoveToCoord;
+                    processMoveToCoord(gameState, moveToAction);
+                    const index = moveToAction.payload.counterIds.indexOf(counter.id);
                     const replayMovementElement: ReplayMovementElement = {
                         type: ActionType.MOVE_TO_COORD,
-                        counterId: action.payload.counterId,
-                        fromAreaId: action.payload.fromAreaId,
-                        fromCoord: action.payload.fromCoord,
-                        toAreaId: action.payload.toAreaId,
-                        toCoord: action.payload.toCoord,
-                        weaponCounterId: action.payload.weaponCounterId,
-                        movementCost: 0,
-                        engagedData: {},
-                        spottedData: {}
+                        counterId: counter.id,
+                        fromAreaId: moveToAction.payload.fromAreaId,
+                        fromCoord: moveToAction.payload.fromCoords[index],
+                        toAreaId: moveToAction.payload.toAreaId,
+                        toCoord: moveToAction.payload.toCoord,
+                        weaponCounterId: undefined,
+                        engagedData: {},    
+                        spottedData: {},
+                        movementCost: moveToAction.payload.movementCost
                     };
                     replayMovementElements.push(replayMovementElement);
 
@@ -217,4 +226,4 @@ const executeMovementPhase = (gameState: GameState, currentCrewAndMonsterCounter
 }
 
 //need function to determine spotted status of areas
-//will call before a move to coord and after in order to create delta of counters in the areas for the replay element.
+//will call before a move to coord and after in order to create delta of counters in the areas for the replay element. 

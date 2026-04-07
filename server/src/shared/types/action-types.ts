@@ -82,7 +82,7 @@ type GrabWeaponActionPayload = {
     weaponCounterId: string;
     fromAreaId: string;
     fromCoord: Coord;
-    movementCost: 0;
+    movementCost: number;
 };
 
 export interface ActionGrabWeapon extends Action {
@@ -113,7 +113,7 @@ type DropWeaponPayload = {
     weaponCounterId: string;
     fromAreaId: string;
     fromCoord: Coord;
-    movementCost: 0;
+    movementCost: number;
 };
 
 export interface ActionDropWeapon extends Action {
@@ -165,6 +165,7 @@ type MoveToCoordPayload = {
     fromCoords: Coord[];
     toAreaId: string;
     toCoord: Coord;
+    movementCost: number;
 };
 
 export interface ActionMoveToCoord extends Action {

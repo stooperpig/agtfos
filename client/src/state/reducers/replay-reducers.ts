@@ -119,8 +119,9 @@ const applyMovementAction = (activeState: ReplayState, replayMovementElement: Re
                     counterIds: [replayMovementElement.counterId],
                     fromAreaId: replayMovementElement.fromAreaId,
                     fromCoords: [replayMovementElement.fromCoord],
-                    toAreaId: replayMovementElement.toAreaId,
-                    toCoord: replayMovementElement.toCoord
+                    toAreaId: replayMovementElement.toAreaId!,
+                    toCoord: replayMovementElement.toCoord!,
+                    movementCost: replayMovementElement.movementCost
                 }
             };
             moveCounter(activeState, moveAction);
@@ -139,9 +140,9 @@ const applyMovementAction = (activeState: ReplayState, replayMovementElement: Re
                 type: ActionType.GRAB_WEAPON,
                 payload: {
                     crewCounterId: replayMovementElement.counterId,
-                    weaponCounterId: replayMovementElement.weaponCounterId,
+                    weaponCounterId: replayMovementElement.weaponCounterId!,
                     fromAreaId: replayMovementElement.fromAreaId,
-                    fromCoord: replayMovementElement.fromCoord,
+                    fromCoord: replayMovementElement.fromCoord!,
                     movementCost: replayMovementElement.movementCost
                 }
             };
@@ -152,9 +153,9 @@ const applyMovementAction = (activeState: ReplayState, replayMovementElement: Re
                 type: ActionType.DROP_WEAPON,
                 payload: {
                     crewCounterId: replayMovementElement.counterId,
-                    weaponCounterId: replayMovementElement.weaponCounterId,
-                    fromAreaId: replayMovementElement.toAreaId,
-                    fromCoord: replayMovementElement.toCoord,
+                    weaponCounterId: replayMovementElement.weaponCounterId!,
+                    fromAreaId: replayMovementElement.toAreaId!,
+                    fromCoord: replayMovementElement.toCoord!,
                     movementCost: replayMovementElement.movementCost
                 }
             };

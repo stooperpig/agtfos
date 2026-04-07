@@ -136,7 +136,8 @@ export const processAddAction = (state: GameState, action: ActionAddAction): voi
                         fromAreaId: moveToCoordAction.payload.fromAreaId,
                         fromCoords: [moveToCoordAction.payload.fromCoords[index]],
                         toAreaId: moveToCoordAction.payload.toAreaId,
-                        toCoord: moveToCoordAction.payload.toCoord
+                        toCoord: moveToCoordAction.payload.toCoord,
+                        movementCost: moveToCoordAction.payload.movementCost
                     }
                 };
                 counter.actions.push(singleCounterAction);
@@ -155,7 +156,7 @@ export const processAddAction = (state: GameState, action: ActionAddAction): voi
 }
 
 export const processMoveToCoord = (state: GameState, action: ActionMoveToCoord): void => {
-    const { counterIds, fromAreaId, fromCoords, toAreaId, toCoord } = action.payload;
+    const { counterIds, fromAreaId, fromCoords, toAreaId, toCoord, movementCost } = action.payload;
 
     if (toCoord === undefined || counterIds === undefined || counterIds.length === 0) {
         return;
@@ -183,7 +184,6 @@ export const processMoveToCoord = (state: GameState, action: ActionMoveToCoord):
     const counters = counterIds.map(counterId => state.counterMap[counterId]);
 
     counters.forEach(counter => {
-        const movementCost = fromAreaId !== toAreaId ? 1 : 0;
         counter.coord = toCoord;
         if (fromAreaId !== toAreaId) {
             counter.usedMovementAllowance += movementCost;

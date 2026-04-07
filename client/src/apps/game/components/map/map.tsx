@@ -3,7 +3,7 @@ import React from 'react'
 import { useAppDispatch, useAppSelector } from '../../../../constants/store';
 import { ImageData, ScenarioData } from '../../../../constants/game-constants';
 import { Coord, CounterMap, Player, Polygon, Stack, StackMap, AreaDefinition, Aperture, AreaDefinitionMap, Phase } from '../../../../shared/types/game-types';
-import { pointInPolygon } from '../../utils/map-utils';
+import { getMovementCost, pointInPolygon } from '../../utils/map-utils';
 import { sortCounterIdsBySelected, validateMove } from './utils';
 import { sendMessage, socketId } from '../../../../api/web-socket';
 import { putData } from '../../../../api/api-utils';
@@ -184,7 +184,8 @@ const Map = () => {
             return counter.coord!
         });
 
-        const moveToAction: ActionMoveToCoord = { type: ActionType.MOVE_TO_COORD, payload: { counterIds: [...selectedCounterIds], fromAreaId: currentAreaId!, fromCoords: fromCoords, toAreaId: newArea!.id, toCoord: { x: posX / scale, y: posY / scale } } };
+        const movementCost   = getMovementCost(currentAreaId!, newArea!.id);
+        const moveToAction: ActionMoveToCoord = { type: ActionType.MOVE_TO_COORD, payload: { counterIds: [...selectedCounterIds], fromAreaId: currentAreaId!, fromCoords: fromCoords, toAreaId: newArea!.id, toCoord: { x: posX / scale, y: posY / scale }, movementCost } };
         console.log(JSON.stringify(moveToAction));
         putData(`api/games/${gameId}/action`, { socketId, action: moveToAction }).then((resp) => {
             dispatch({ type: ActionType.SELECT_AREA, payload: { areaId: newArea?.id, clearSelectedCounterIds: false } });

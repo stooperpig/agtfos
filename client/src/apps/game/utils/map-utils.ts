@@ -26,3 +26,12 @@ export const pointInPolygon = function (polygon: Polygon, point: Coord) {
     //If the number of crossings was odd, the point is in the polygon
     return odd;
 };
+
+export const getMovementCost = (fromAreaId: string, toAreaId: string): number => {
+    if (fromAreaId === toAreaId) {
+        return 0;
+    }
+    // TODO: Implement actual movement cost calculation based on area connections
+    // For now, return a default value
+    return 1;
+};

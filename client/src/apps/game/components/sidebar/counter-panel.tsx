@@ -27,8 +27,16 @@ export const CounterPanel = (props: PropTypes) => {
     }
 
     const renderDataPanel = () => {
-        if (isWeapon(counter) || isMonster(counter)) {
+        if (isWeapon(counter)) {
             return null;
+        }
+
+        if (isMonster(counter)) {
+            return (
+                <div className="counter-panel-data">
+                    {counter.engaged ? 'Engaged' : ''}
+                </div>
+            );
         }
         
         return (

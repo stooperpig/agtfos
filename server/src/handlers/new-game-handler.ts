@@ -50,7 +50,7 @@ export const createNewGame = (newPlayers: NewGamePlayer[], scenario: Scenario, d
         weaponEffectMap: {},
         mapScale: 0.5,
         selectedCounterIds: [],
-        monsterTurnStatus: PlayerTurnStatus.STARTED
+        monsterTurnStatus: PlayerTurnStatus.STARTED,
     }
 
     generateCrewCounters(game, scenario)
@@ -84,7 +84,9 @@ export const generateWeaponCounters = (game: GameState, scenario: Scenario) => {
                 usedMovementAllowance: 0,
                 actions: [],
                 engaged: false,
-                spotted: false
+                spotted: false,
+                moved: false,
+                attacking: false
             }
             game.counterMap[counter.id] = counter;
         }
@@ -165,7 +167,9 @@ export const generateCrewCounters = (game: GameState, scenario: Scenario) => {
             usedMovementAllowance: 0,
             actions: [],
             engaged: false,
-            spotted: false
+            spotted: false,
+            moved: false,
+            attacking: false
         }
         game.counterMap[counter.id] = counter;
     });
@@ -175,57 +179,66 @@ export const generateMonsterCounters = (game: GameState, scenario: Scenario) => 
     const length = scenario.monsterSettings.startingCounts.length;
     const index = randomNumber(length) - 1;
     const startingCounts = scenario.monsterSettings.startingCounts[index];
+    let monsterTypeData = scenario.monsterSettings.monsterPropertyMap[CounterType.ADULT];
     for (let i = 0; i < startingCounts.adults; i++) {
         const id = game.nextCounterId++;
         const counter: Counter = {
             id: id.toString(),
             type: CounterType.ADULT,
             name: `AGT-${id}`,
-            movementAllowance: 2,
-            attackDice: 4,
-            constitution: 16,
-            imageName: `Adult-${(id % scenario.monsterSettings.adultImageCount) + 1}`,
+            movementAllowance: monsterTypeData.movementAllowance,
+            attackDice: monsterTypeData.attackDice,
+            constitution: monsterTypeData.constitution,
+            imageName: getMonsterImageName(id, CounterType.ADULT, scenario.monsterSettings.monsterImageCountMap[CounterType.ADULT]),
             stunned: false,
             usedMovementAllowance: 0,
             actions: [],
             engaged: false,
-            spotted: false
+            spotted: false,
+            moved: false,
+            attacking: false
         }
         game.counterMap[counter.id] = counter;
     }
+    monsterTypeData = scenario.monsterSettings.monsterPropertyMap[CounterType.EGG];    
     for (let i = 0; i < startingCounts.eggs; i++) {
         const id = game.nextCounterId++;
         const counter: Counter = {
             id: id.toString(),
             type: CounterType.EGG,
             name: `AGT-${id}`,
-            movementAllowance: 2,
-            attackDice: 2,
-            constitution: 8,
-            imageName: `Egg-${(id % scenario.monsterSettings.eggImageCount) + 1}`,
+            movementAllowance: monsterTypeData.movementAllowance,
+            attackDice: monsterTypeData.attackDice,
+            constitution: monsterTypeData.constitution,
+            imageName: getMonsterImageName(id, CounterType.EGG, scenario.monsterSettings.monsterImageCountMap[CounterType.EGG]),
             stunned: false,
             usedMovementAllowance: 0,
             actions: [],
             engaged: false,
-            spotted: false
+            spotted: false,
+            moved: false,
+            attacking: false
         }
         game.counterMap[counter.id] = counter;
     }
+    monsterTypeData = scenario.monsterSettings.monsterPropertyMap[CounterType.BABY];
     for (let i = 0; i < startingCounts.babies; i++) {
         const id = game.nextCounterId++;
         const counter: Counter = {
             id: id.toString(),
             type: CounterType.BABY,
             name: `AGT-${id}`,
-            movementAllowance: 1,
-            attackDice: 1,
-            constitution: 4,
-            imageName: `Baby-${(id % scenario.monsterSettings.babyImageCount) + 1}`,
+            movementAllowance: monsterTypeData.movementAllowance,
+            attackDice: monsterTypeData.attackDice,
+            constitution: monsterTypeData.constitution,
+            imageName: getMonsterImageName(id, CounterType.BABY, scenario.monsterSettings.monsterImageCountMap[CounterType.BABY]),
             stunned: false,
             usedMovementAllowance: 0,
             actions: [],
             engaged: false,
-            spotted: false
+            spotted: false,
+            moved: false,
+            attacking: false
         }
         game.counterMap[counter.id] = counter;
     }
@@ -253,4 +266,17 @@ export const placeMonsters = (game: GameState, scenario: Scenario) => {
 
 const randomNumber = (max: number) => {
     return Math.floor(Math.random() * max) + 1;
+}
+
+export const getMonsterImageName = (id: number, type: CounterType, imageCount: number): string => {
+    switch(type) {
+        case CounterType.EGG:
+            return `Egg-${(id % imageCount) + 1}`;
+        case CounterType.BABY:
+            return `Baby-${(id % imageCount) + 1}`;
+        case CounterType.ADULT:
+            return `Adult-${(id % imageCount) + 1}`;
+        default:
+            return 'unknown';
+    }
 }

@@ -16,12 +16,14 @@ export const checkEngagement = (areaId: string | undefined, counterType: Counter
             console.log(`Check stack counter ids for monsters: ${stack.counterIds}`);
             enemyCounterIds = stack.counterIds.filter(counterId => {
                 const counter = counterMap[counterId];
-                return counter ? isMonster(counter) : false;
+                //stun, egg, frag
+                return counter ? !counter.stunned && (counter.type === CounterType.ADULT || counter.type === CounterType.BABY) : false;
             });
         } else {
             enemyCounterIds = stack.counterIds.filter(counterId => {
                 const counter = counterMap[counterId];
-                return counter ? isCrew(counter) : false;
+                //stun 
+                return counter ? !counter.stunned && isCrew(counter) : false;
             });
         }
 

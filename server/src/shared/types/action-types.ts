@@ -1,4 +1,4 @@
-import { Coord, GameState, Replay } from "./game-types";
+import { Coord, CounterType, GameState, Replay } from "./game-types";
 
 export interface Action {
     type: ActionType;
@@ -25,11 +25,66 @@ export enum ActionType {
     REPLAY_STEP_FORWARD = 'REPLAY_STEP_FORWARD',
     // REPLAY_STOP = 'REPLAY_STOP',
     REPLAY_START = 'REPLAY_START',
-    REPLAY_END  = 'REPLAY_END', 
+    REPLAY_END = 'REPLAY_END',
     //REPLAY_SET_INDEX = 'REPLAY_SET_INDEX',
     REFRESH_REPLAY = 'REFRESH_REPLAY',
     ADD_ACTION = 'ADD_ACTION',
-    SET_SPOTTED_OR_ENAGED = 'SET_SPOTTED_OR_ENAGED'
+    SET_SPOTTED_OR_ENAGED = 'SET_SPOTTED_OR_ENAGED',
+    UPDATE_MONSTER_PLANS = 'UPDATE_MONSTER_PLANS',
+    UPDATE_CREW_ATTACK_PLANS = 'UPDATE_CREW_ATTACK_PLANS',
+    GROW_MONSTER = 'GROW_MONSTER',
+    LAY_EGG = 'LAY_EGG'
+}
+
+type UpdateCrewAttackPlansPayload = {
+    actions: Action[];
+};
+
+export interface ActionUpdateCrewAttackPlans extends Action {
+    type: ActionType.UPDATE_CREW_ATTACK_PLANS;
+    payload: UpdateCrewAttackPlansPayload;
+}
+
+type GrowMonsterPayload = {
+    counterId: string;
+    fromAreaId: string;
+    fromCoord: Coord;
+    nextType: CounterType;
+    movementAllowance: number;
+    attackDice: number;
+    constitution: number;
+    imageName: string;
+};
+
+export interface ActionGrowMonster extends Action {
+    type: ActionType.GROW_MONSTER;
+    payload: GrowMonsterPayload;
+}
+
+type LayEggPayload = {
+    counterId: string;
+    fromAreaId: string;
+    fromCoord: Coord;
+    newCounterId: string;
+    movementAllowance: number;
+    attackDice: number;
+    constitution: number;
+    imageName: string;
+};
+
+export interface ActionLayEgg extends Action {
+    type: ActionType.LAY_EGG;
+    payload: LayEggPayload;
+}
+
+type UpdateMonsterPlansPayload = {
+    actionsMap: { [key: string]: Action[] };
+    nextCounterId: string;
+};
+
+export interface ActionUpdateMonsterPlans extends Action {
+    type: ActionType.UPDATE_MONSTER_PLANS;
+    payload: UpdateMonsterPlansPayload;
 }
 
 type SetSpottedOrEnagedPayload = {
@@ -165,7 +220,7 @@ type MoveToCoordPayload = {
     fromCoords: Coord[];
     toAreaId: string;
     toCoord: Coord;
-    movementCost: number;
+    movementCost: number
 };
 
 export interface ActionMoveToCoord extends Action {

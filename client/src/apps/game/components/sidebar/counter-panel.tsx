@@ -34,15 +34,17 @@ export const CounterPanel = (props: PropTypes) => {
         if (isMonster(counter)) {
             return (
                 <div className="counter-panel-data">
-                    {counter.engaged ? 'Engaged' : ''}
+                    {counter.name}<br />
+                    Mv: {counter.movementAllowance - counter.usedMovementAllowance}/{counter.movementAllowance}<br />
+                    <span className={counter.engaged ? 'counter-panel-engaged' : ''}>{counter.engaged ? 'Engaged' : ''}</span>
                 </div>
             );
         }
-        
+
         return (
             <div className="counter-panel-data">
                 Mv: {counter.movementAllowance - counter.usedMovementAllowance}/{counter.movementAllowance}<br />
-                {counter.engaged ? 'Engaged' : ''}
+                <span className={counter.engaged ? 'counter-panel-engaged' : ''}>{counter.engaged ? 'Engaged' : ''}</span>
                 {renderWeapon()}
             </div>
         )

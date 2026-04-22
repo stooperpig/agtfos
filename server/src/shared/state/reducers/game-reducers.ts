@@ -1,5 +1,5 @@
-import { GameState, PlayerTurnStatus } from "../../../shared/types/game-types";
-import { ActionAddAction, ActionClearPlan, ActionDeselectCounter, ActionDropWeapon, ActionGrabWeapon, ActionMoveToCoord, ActionPhaseComplete, ActionRefreshGame, ActionSelectArea, ActionSelectCounter, ActionSetStatusMessage, ActionType, ActionUpdateConnectedClientCount } from "../../types/action-types";
+import { Counter, CounterType, GameState, PlayerTurnStatus } from "../../../shared/types/game-types";
+import { Action, ActionAddAction, ActionClearPlan, ActionDeselectCounter, ActionDropWeapon, ActionGrabWeapon, ActionGrowMonster, ActionLayEgg, ActionMoveToCoord, ActionPhaseComplete, ActionRefreshGame, ActionSelectArea, ActionSelectCounter, ActionSetStatusMessage, ActionType, ActionUpdateConnectedClientCount, ActionUpdateCrewAttackPlans, ActionUpdateMonsterPlans } from "../../types/action-types";
 
 export const processClearPlan = (state: GameState, action: ActionClearPlan): void => {
     const counterIds = action.payload.counterIds;
@@ -151,8 +151,59 @@ export const processAddAction = (state: GameState, action: ActionAddAction): voi
                 counter.actions.push(actionToAdd);
                 break;
             }
+            case ActionType.GROW_MONSTER: {
+                counter.actions.push(actionToAdd);
+                break;
+            }
+            case ActionType.LAY_EGG: {
+                counter.actions.push(actionToAdd);
+                break;
+            }
         }
     });
+}
+
+export const processGrowMonster = (state: GameState, action: ActionGrowMonster): void => {
+    const { counterId, nextType, movementAllowance, attackDice, constitution, imageName } = action.payload;
+
+    const counter = state.counterMap[counterId];
+    counter.movementAllowance = movementAllowance;
+    counter.attackDice = attackDice;
+    counter.constitution = constitution;
+    counter.imageName = imageName;
+    counter.type = nextType;
+}
+
+export const processLayEgg = (state: GameState, action: ActionLayEgg): void => {
+    const { counterId, newCounterId, movementAllowance, attackDice, constitution, imageName, fromAreaId, fromCoord } = action.payload;
+
+    const parentCounter = state.counterMap[counterId];
+
+    const newCounter: Counter = {
+        id: newCounterId.toString(),
+        name: `AGT-${newCounterId}`,
+        type: CounterType.EGG,
+        areaId: fromAreaId,
+        coord: fromCoord,
+        stunned: false,
+        movementAllowance: movementAllowance,
+        attackDice: attackDice,
+        constitution: constitution,
+        imageName: imageName,
+        usedMovementAllowance: 0,
+        actions: [],
+        engaged: false,
+        spotted: false,
+        moved: false,
+        attacking: false
+    };
+
+    state.counterMap[newCounter.id] = newCounter;
+
+    const stack = state.stackMap[newCounter.areaId!];
+    if (stack) {
+        stack.counterIds.push(newCounter.id);
+    }
 }
 
 export const processMoveToCoord = (state: GameState, action: ActionMoveToCoord): void => {
@@ -231,6 +282,22 @@ export const processSelectCounter = (state: GameState, action: ActionSelectCount
     } else {
         state.selectedCounterIds = [...state.selectedCounterIds, counterId];
     }
+}
+
+export const processUpdateCrewAttackPlans = (state: GameState, action: ActionUpdateCrewAttackPlans): void => {
+    const { actions } = action.payload;
+    //state.crewAttackPlans = actions;
+}
+
+export const processUpdateMonsterPlans = (state: GameState, action: ActionUpdateMonsterPlans): void => {
+    const { actionsMap, nextCounterId } = action.payload;
+    Object.entries(actionsMap).forEach(([monsterId, actions]) => {
+        const monster = state.counterMap[monsterId];
+        if (monster) {
+            monster.actions = actions as Action[];
+        }
+    });
+    state.nextCounterId = parseInt(nextCounterId);
 }
 
 export const processUpdateClientCount = (state: GameState, action: ActionUpdateConnectedClientCount): void => {

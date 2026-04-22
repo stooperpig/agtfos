@@ -13,7 +13,7 @@ export function ReplayRunner() {
 
     const id = setTimeout(() => {
       dispatch({ type: ActionType.REPLAY_STEP_FORWARD })
-    }, 1000)
+    }, 500)
 
     return () => clearTimeout(id)
   }, [replay])

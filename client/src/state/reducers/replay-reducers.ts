@@ -1,6 +1,7 @@
 import cloneDeep from "lodash.clonedeep";
-import { Action, ActionDropWeapon, ActionGrabWeapon, ActionMoveToCoord, ActionRefreshReplay, ActionReplayPlay, ActionReplayShow, ActionType } from "../../shared/types/action-types";
-import { GameState, Phase, Replay, ReplayAttackElement, ReplayMovementElement, ReplayState } from "../../shared/types/game-types"
+import { Action, ActionDropWeapon, ActionGrabWeapon, ActionGrowMonster, ActionLayEgg, ActionMoveToCoord, ActionRefreshReplay, ActionReplayPlay, ActionReplayShow, ActionType } from "../../shared/types/action-types";
+import { Counter, CounterType, GameState, Phase, Replay, ReplayAttackElement, ReplayMovementElement, ReplayState } from "../../shared/types/game-types"
+import { processGrowMonster } from "../../shared/state/reducers/game-reducers";
 
 export const processReplayStart = (state: GameState) => {
     const replay = state.replay;
@@ -77,7 +78,7 @@ const updateReplay = (replay: Replay, newIndex: number, phase: Phase): void => {
                 for (let i = replay.index + 1; i <= newIndex; i++) {
                     if (phase === Phase.ATTACK) {
                         const replayElement = replay.replayElements.movementElements[i];
-                        applyMovementAction(replay.activeState!, replayElement);
+                        applyMovementAction(replay.activeState!, replayElement, true);
                     } else {
                         const replayElement = replay.replayElements.attackElements[i];
                         applyAttackAction(replay.activeState!, replayElement);
@@ -89,7 +90,7 @@ const updateReplay = (replay: Replay, newIndex: number, phase: Phase): void => {
                 for (let i = 0; i <= newIndex; i++) {
                     if (phase === Phase.ATTACK) {
                         const replayElement = replay.replayElements.movementElements[i];
-                        applyMovementAction(replay.activeState!, replayElement);
+                        applyMovementAction(replay.activeState!, replayElement, false);
                     } else {
                         const replayElement = replay.replayElements.attackElements[i];
                         applyAttackAction(replay.activeState!, replayElement);
@@ -110,7 +111,7 @@ const applyAttackAction = (activeState: ReplayState, replayAttackElement: Replay
     // return activeState;
 }
 
-const applyMovementAction = (activeState: ReplayState, replayMovementElement: ReplayMovementElement): void => {
+const applyMovementAction = (activeState: ReplayState, replayMovementElement: ReplayMovementElement, showAnimation: boolean): void => {
     switch (replayMovementElement.type) {
         case ActionType.MOVE_TO_COORD:
             const moveAction: ActionMoveToCoord = {
@@ -132,6 +133,14 @@ const applyMovementAction = (activeState: ReplayState, replayMovementElement: Re
                     counter.engaged = engaged;
                 }
             });
+
+            if (showAnimation) {
+                activeState.animation = {
+                    counterId: replayMovementElement.counterId,
+                    fromCoord: replayMovementElement.fromCoord,
+                    toCoord: replayMovementElement.toCoord!
+                };
+            }
 
             //todo: handle spotted data next
             break;
@@ -161,11 +170,43 @@ const applyMovementAction = (activeState: ReplayState, replayMovementElement: Re
             };
             dropWeapon(activeState, dropWeaponAction);
             break;
+        case ActionType.GROW_MONSTER:
+            const growMonsterAction: ActionGrowMonster = {
+                type: ActionType.GROW_MONSTER,
+                payload: {
+                    counterId: replayMovementElement.counterId,
+                    nextType: replayMovementElement.nextType!,
+                    movementAllowance: replayMovementElement.movementAllowance!,
+                    attackDice: replayMovementElement.attackDice!,
+                    constitution: replayMovementElement.constitution!,
+                    imageName: replayMovementElement.imageName!,
+                    fromAreaId: replayMovementElement.fromAreaId,
+                    fromCoord: replayMovementElement.fromCoord!
+                }
+            };
+            growMonster(activeState, growMonsterAction);
+            break;
+        case ActionType.LAY_EGG:
+            const layEggAction: ActionLayEgg = {
+                type: ActionType.LAY_EGG,
+                payload: {
+                    counterId: replayMovementElement.counterId,
+                    newCounterId: replayMovementElement.newCounterId!,
+                    movementAllowance: replayMovementElement.movementAllowance!,
+                    attackDice: replayMovementElement.attackDice!,
+                    constitution: replayMovementElement.constitution!,
+                    imageName: replayMovementElement.imageName!,
+                    fromAreaId: replayMovementElement.fromAreaId,
+                    fromCoord: replayMovementElement.fromCoord!
+                }
+            };
+            layEgg(activeState, layEggAction);
+            break;
     }
 }
 
 const moveCounter = (activeState: ReplayState, moveAction: ActionMoveToCoord): void => {
-    const { counterIds, fromAreaId, fromCoords, toAreaId, toCoord } = moveAction.payload;
+    const { counterIds, fromAreaId, fromCoords, toAreaId, toCoord, movementCost } = moveAction.payload;
 
     if (fromAreaId !== toAreaId) {
         const fromStack = activeState.stackMap[fromAreaId];
@@ -198,26 +239,67 @@ const moveCounter = (activeState: ReplayState, moveAction: ActionMoveToCoord): v
     });
 }
 
-const grabWeapon = (activeState: ReplayState, grabWeaponAction: ActionGrabWeapon): void => {
+const grabWeapon = (state: ReplayState, grabWeaponAction: ActionGrabWeapon): void => {
     const { crewCounterId, weaponCounterId, fromAreaId } = grabWeaponAction.payload;
-    const crewCounter = activeState.counterMap[crewCounterId];
-    const weaponCounter = activeState.counterMap[weaponCounterId];
+    const crewCounter = state.counterMap[crewCounterId];
+    const weaponCounter = state.counterMap[weaponCounterId];
     crewCounter.weaponCounterId = weaponCounterId;
     weaponCounter.ownerCounterId = crewCounterId;
     weaponCounter.areaId = fromAreaId;
     weaponCounter.coord = crewCounter.coord;
-    const stack = activeState.stackMap[fromAreaId];
+    const stack = state.stackMap[fromAreaId];
     stack.counterIds = stack.counterIds.filter(counterId => counterId !== weaponCounterId);
 }
 
 const dropWeapon = (state: ReplayState, dropWeaponAction: ActionDropWeapon): void => {
-    const { crewCounterId } = dropWeaponAction.payload;
+    const { crewCounterId, weaponCounterId } = dropWeaponAction.payload;
     const crewCounter = state.counterMap[crewCounterId];
-    const weaponCounter = state.counterMap[crewCounter.weaponCounterId!];
+    const weaponCounter = state.counterMap[weaponCounterId];
     crewCounter.weaponCounterId = undefined;
     weaponCounter.ownerCounterId = undefined;
     weaponCounter.areaId = crewCounter.areaId;
     weaponCounter.coord = crewCounter.coord;
     const stack = state.stackMap[crewCounter.areaId!];
     stack.counterIds.push(weaponCounter.id);
+}
+
+const growMonster = (state: ReplayState, growMonsterAction: ActionGrowMonster): void => {
+    const { counterId, nextType, movementAllowance, attackDice, constitution, imageName } = growMonsterAction.payload;
+
+    const counter = state.counterMap[counterId];
+    counter.movementAllowance = movementAllowance;
+    counter.attackDice = attackDice;
+    counter.constitution = constitution;
+    counter.imageName = imageName;
+    counter.type = nextType;
+}
+
+const layEgg = (state: ReplayState, layEggAction: ActionLayEgg): void => {
+    const { newCounterId, movementAllowance, attackDice, constitution, imageName, fromAreaId, fromCoord } = layEggAction.payload;
+
+    const newCounter: Counter = {
+        id: newCounterId.toString(),
+        name: `AGT-${newCounterId}`,
+        type: CounterType.EGG,
+        areaId: fromAreaId,
+        coord: fromCoord,
+        stunned: false,
+        movementAllowance: movementAllowance,
+        attackDice: attackDice,
+        constitution: constitution,
+        imageName: imageName,
+        usedMovementAllowance: 0,
+        actions: [],
+        engaged: false,
+        spotted: false,
+        moved: false,
+        attacking: false
+    };
+
+    state.counterMap[newCounter.id] = newCounter;
+
+    const stack = state.stackMap[newCounter.areaId!];
+    if (stack) {
+        stack.counterIds.push(newCounter.id);
+    }
 }

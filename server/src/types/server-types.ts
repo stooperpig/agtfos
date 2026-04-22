@@ -29,6 +29,10 @@ export interface ActionData {
     action: Action
 }
 
+export interface DiceTableData {
+    [key: string]: number
+}
+
 export interface ReserveWeaponData {
     gameId: string
     counterId: string
@@ -62,10 +66,10 @@ export type GameContainerMap = {
 };
 
 export type GameContainer = {
-  state: GameState
-  saveTimeout: NodeJS.Timeout | null
-  isDirty: boolean
-  lastSave: number
+    state: GameState
+    saveTimeout: NodeJS.Timeout | null
+    isDirty: boolean
+    lastSave: number
 }
 
 export enum ReplayType {

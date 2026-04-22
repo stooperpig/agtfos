@@ -17,13 +17,14 @@ const SideBar = () => {
     const selectedCounterIds = useAppSelector((state: RootState) => (state.selectedCounterIds));
     const currentPlayerId = useAppSelector((state: RootState) => (state.currentPlayerId));
 
-    const [currentTab, setCurrentTab] = useState<string>('CREW');
+    //const [currentTab, setCurrentTab] = useState<string>('CREW');
 
-    let crewCounterIds: string[] = [];
-    let monsterCounterIds: string[] = [];
-    let weaponCounterIds: string[] = [];
+    let allCounterIds: string[] = [];
 
     if (areaDefinitionMap && currentAreaId) {
+        const crewCounterIds: string[] = [];
+        const monsterCounterIds: string[] = [];
+        const weaponCounterIds: string[] = [];
         const stack = stackMap[currentAreaId];
         if (stack && stack.counterIds && stack.counterIds.length > 0) {
             stack.counterIds.map(counterId => {
@@ -39,58 +40,58 @@ const SideBar = () => {
                 }
             });
 
-            crewCounterIds = [...crewCounterIds, ...weaponCounterIds]
+            allCounterIds = [...crewCounterIds, ...weaponCounterIds, ...monsterCounterIds];
         }
     }
 
     useEffect(() => {
-        let newTab = 'CREW';
+        // let newTab = 'CREW';
 
-        if (crewCounterIds.length > 0) {
-            newTab = 'CREW';
-        } else if (monsterCounterIds.length > 0) {
-            newTab = 'MONSTER';
-        }
+        // if (crewCounterIds.length > 0) {
+        //     newTab = 'CREW';
+        // } else if (monsterCounterIds.length > 0) {
+        //     newTab = 'MONSTER';
+        // }
 
-        if (newTab !== currentTab) {
-            setCurrentTab(newTab);
-        }
+        // if (newTab !== currentTab) {
+        //     setCurrentTab(newTab);
+        // }
     }, [currentAreaId]);
 
     const renderHeader = () => {
         return (
             <div className="side-bar-header">
-                <span className={currentTab === 'CREW' ? 'side-bar-tab-selected' : 'side-bar-tab'} onClick={() => setCurrentTab('CREW')}>Crew</span>
-                <span className={currentTab === 'MONSTER' ? 'side-bar-tab-selected' : 'side-bar-tab'} onClick={() => setCurrentTab('MONSTER')}>AGTFOs</span>
+                {/*<span className={currentTab === 'CREW' ? 'side-bar-tab-selected' : 'side-bar-tab'} onClick={() => setCurrentTab('CREW')}>Crew</span>*/}
+                {/* <span className={currentTab === 'MONSTER' ? 'side-bar-tab-selected' : 'side-bar-tab'} onClick={() => setCurrentTab('MONSTER')}>AGTFOs</span> */}
                 {/* <span className={currentTab === 'WEAPON' ? 'side-bar-tab-selected' : 'side-bar-tab'} onClick={() => setCurrentTab('WEAPON')}>W</span> */}
             </div>
         )
     }
 
     const renderCounters = () => {
-        if (currentTab === 'CREW') {
+        //if (currentTab === 'CREW') {
             return (
                 <div className="side-bar-counters">
-                    {crewCounterIds.map((counterId: string, index: number) => {
+                    {allCounterIds.map((counterId: string, index: number) => {
                         return (
                             <CounterPanel key={index} counterId={counterId} selected={selectedCounterIds.includes(counterId)} onClick={handleSelectCounter} />
                         )
                     })}
                 </div>
             )
-        } else if (currentTab === 'MONSTER') {
-            return (
-                <div className="side-bar-counters">
-                    {monsterCounterIds.map((counterId: string, index: number) => {
-                        return (
-                            <CounterPanel key={index} counterId={counterId} selected={selectedCounterIds.includes(counterId)} onClick={handleSelectCounter} />
-                        )
-                    })}
-                </div>
-            );
-        } else {
-            return (<div></div>)
-        }
+        //} else if (currentTab === 'MONSTER') {
+            // return (
+            //     <div className="side-bar-counters">
+            //         {monsterCounterIds.map((counterId: string, index: number) => {
+            //             return (
+            //                 <CounterPanel key={index} counterId={counterId} selected={selectedCounterIds.includes(counterId)} onClick={handleSelectCounter} />
+            //             )
+            //         })}
+            //     </div>
+            // );
+        //} else {
+        //    return (<div></div>)
+        //}
     }
 
     const handleSelectCounter = (counterId: string) => {
@@ -112,7 +113,6 @@ const SideBar = () => {
 
     return (
         <div className="side-bar">
-            {renderHeader()}
             {renderCounters()}
         </div>
     );

@@ -63,11 +63,7 @@
           {
             "type": "DOOR",
             "areaId": "22",
-            "losAreaIds": [
-              "22",
-              "42",
-              "43"
-            ]
+            "losAreaIds": []
           }
         ],
         "polygon": [
@@ -114,11 +110,7 @@
           {
             "type": "DOOR",
             "areaId": "22",
-            "losAreaIds": [
-              "22",
-              "42",
-              "43"
-            ]
+            "losAreaIds": []
           }
         ],
         "polygon": [
@@ -209,10 +201,7 @@
           {
             "type": "DOOR",
             "areaId": "5",
-            "losAreaIds": [
-              "5",
-              "26"
-            ]
+            "losAreaIds": []
           }
         ],
         "polygon": [
@@ -267,7 +256,7 @@
             "losAreaIds": []
           },
           {
-            "type": "DOOR",
+            "type": "OPEN",
             "areaId": "26",
             "losAreaIds": []
           }
@@ -303,10 +292,7 @@
           {
             "type": "DOOR",
             "areaId": "5",
-            "losAreaIds": [
-              "5",
-              "26"
-            ]
+            "losAreaIds": []
           },
           {
             "type": "DOOR",
@@ -380,10 +366,7 @@
           {
             "type": "DOOR",
             "areaId": "31",
-            "losAreaIds": [
-              "31",
-              "32"
-            ]
+            "losAreaIds": []
           }
         ],
         "polygon": [
@@ -430,10 +413,7 @@
           {
             "type": "DOOR",
             "areaId": "31",
-            "losAreaIds": [
-              "31",
-              "32"
-            ]
+            "losAreaIds": []
           }
         ],
         "polygon": [
@@ -467,10 +447,7 @@
           {
             "type": "DOOR",
             "areaId": "11",
-            "losAreaIds": [
-              "11",
-              "32"
-            ]
+            "losAreaIds": []
           }
         ],
         "polygon": [
@@ -513,10 +490,7 @@
           {
             "type": "DOOR",
             "areaId": "11",
-            "losAreaIds": [
-              "11",
-              "32"
-            ]
+            "losAreaIds": []
           }
         ],
         "polygon": [
@@ -596,7 +570,7 @@
             "losAreaIds": []
           },
           {
-            "type": "DOOR",
+            "type": "OPEN",
             "areaId": "32",
             "losAreaIds": []
           }
@@ -636,10 +610,7 @@
           {
             "type": "DOOR",
             "areaId": "11",
-            "losAreaIds": [
-              "11",
-              "32"
-            ]
+            "losAreaIds": []
           },
           {
             "type": "DOOR",
@@ -649,10 +620,7 @@
           {
             "type": "DOOR",
             "areaId": "14",
-            "losAreaIds": [
-              "34",
-              "14"
-            ]
+            "losAreaIds": []
           }
         ],
         "polygon": [
@@ -714,10 +682,7 @@
           {
             "type": "DOOR",
             "areaId": "14",
-            "losAreaIds": [
-              "34",
-              "14"
-            ]
+            "losAreaIds": []
           }
         ],
         "polygon": [
@@ -784,7 +749,7 @@
             "losAreaIds": []
           },
           {
-            "type": "DOOR",
+            "type": "OPEN",
             "areaId": "34",
             "losAreaIds": []
           },
@@ -829,10 +794,7 @@
           {
             "type": "DOOR",
             "areaId": "14",
-            "losAreaIds": [
-              "34",
-              "14"
-            ]
+            "losAreaIds": []
           }
         ],
         "polygon": [
@@ -961,10 +923,7 @@
           {
             "type": "DOOR",
             "areaId": "38",
-            "losAreaIds": [
-              "38",
-              "44"
-            ]
+            "losAreaIds": []
           },
           {
             "type": "DOOR",
@@ -1103,11 +1062,7 @@
           {
             "type": "DOOR",
             "areaId": "22",
-            "losAreaIds": [
-              "22",
-              "42",
-              "43"
-            ]
+            "losAreaIds": []
           }
         ],
         "polygon": [
@@ -1158,9 +1113,9 @@
             "losAreaIds": []
           },
           {
-            "type": "DOOR",
+            "type": "OPEN",
             "areaId": "42",
-            "losAreaIds": []
+            "losAreaIds": ["43"]
           }
         ],
         "polygon": [
@@ -1233,11 +1188,7 @@
           {
             "type": "DOOR",
             "areaId": "42",
-            "losAreaIds": [
-              "22",
-              "42",
-              "43"
-            ]
+            "losAreaIds": []
           }
         ],
         "polygon": [
@@ -1271,10 +1222,7 @@
           {
             "type": "DOOR",
             "areaId": "26",
-            "losAreaIds": [
-              "5",
-              "26"
-            ]
+            "losAreaIds": []
           }
         ],
         "polygon": [
@@ -1306,7 +1254,7 @@
         "name": "Hallway",
         "apertures": [
           {
-            "type": "DOOR",
+            "type": "OPEN",
             "areaId": "5",
             "losAreaIds": []
           },
@@ -1323,11 +1271,7 @@
           {
             "type": "DOOR",
             "areaId": "43",
-            "losAreaIds": [
-              "22",
-              "42",
-              "43"
-            ]
+            "losAreaIds": []
           }
         ],
         "polygon": [
@@ -1366,10 +1310,7 @@
           {
             "type": "DOOR",
             "areaId": "26",
-            "losAreaIds": [
-              "5",
-              "26"
-            ]
+            "losAreaIds": []
           },
           {
             "type": "DOOR",
@@ -1495,10 +1436,7 @@
           {
             "type": "DOOR",
             "areaId": "44",
-            "losAreaIds": [
-              "44",
-              "45"
-            ]
+            "losAreaIds": []
           }
         ],
         "polygon": [
@@ -1549,10 +1487,7 @@
           {
             "type": "DOOR",
             "areaId": "45",
-            "losAreaIds": [
-              "44",
-              "45"
-            ]
+            "losAreaIds": []
           }
         ],
         "polygon": [
@@ -1607,7 +1542,7 @@
             "losAreaIds": []
           },
           {
-            "type": "DOOR",
+            "type": "OPEN",
             "areaId": "32",
             "losAreaIds": []
           }
@@ -1649,12 +1584,12 @@
         "name": "Hallway",
         "apertures": [
           {
-            "type": "DOOR",
+            "type": "OPEN",
             "areaId": "31",
             "losAreaIds": []
           },
           {
-            "type": "DOOR",
+            "type": "OPEN",
             "areaId": "11",
             "losAreaIds": []
           },
@@ -1703,10 +1638,7 @@
           {
             "type": "DOOR",
             "areaId": "34",
-            "losAreaIds": [
-              "34",
-              "14"
-            ]
+            "losAreaIds": []
           }
         ],
         "polygon": [
@@ -1777,7 +1709,7 @@
             ]
           },
           {
-            "type": "DOOR",
+            "type": "OPEN",
             "areaId": "14",
             "losAreaIds": []
           }
@@ -1817,10 +1749,7 @@
           {
             "type": "DOOR",
             "areaId": "34",
-            "losAreaIds": [
-              "34",
-              "14"
-            ]
+            "losAreaIds": []
           },
           {
             "type": "DOOR",
@@ -1919,10 +1848,7 @@
           {
             "type": "DOOR",
             "areaId": "38",
-            "losAreaIds": [
-              "38",
-              "44"
-            ]
+            "losAreaIds": []
           },
           {
             "type": "DOOR",
@@ -1981,7 +1907,7 @@
             "losAreaIds": []
           },
           {
-            "type": "DOOR",
+            "type": "OPEN",
             "areaId": "44",
             "losAreaIds": []
           }
@@ -2017,11 +1943,7 @@
           {
             "type": "DOOR",
             "areaId": "43",
-            "losAreaIds": [
-              "22",
-              "42",
-              "43"
-            ]
+            "losAreaIds": []
           },
           {
             "type": "DOOR",
@@ -2074,11 +1996,7 @@
           {
             "type": "DOOR",
             "areaId": "42",
-            "losAreaIds": [
-              "22",
-              "42",
-              "43"
-            ]
+            "losAreaIds": []
           },
           {
             "type": "DOOR",
@@ -2181,7 +2099,7 @@
         "name": "Hallway",
         "apertures": [
           {
-            "type": "DOOR",
+            "type": "OPEN",
             "areaId": "22",
             "losAreaIds": []
           },
@@ -2196,7 +2114,7 @@
             "losAreaIds": []
           },
           {
-            "type": "DOOR",
+            "type": "OPEN",
             "areaId": "43",
             "losAreaIds": []
           }
@@ -2230,17 +2148,14 @@
         "name": "Hallway",
         "apertures": [
           {
-            "type": "DOOR",
+            "type": "OPEN",
             "areaId": "42",
-            "losAreaIds": []
+            "losAreaIds": ["22"]
           },
           {
             "type": "DOOR",
             "areaId": "26",
-            "losAreaIds": [
-              "5",
-              "26"
-            ]
+            "losAreaIds": []
           },
           {
             "type": "DOOR",
@@ -2284,14 +2199,10 @@
           {
             "type": "DOOR",
             "areaId": "43",
-            "losAreaIds": [
-              "22",
-              "42",
-              "43"
-            ]
+            "losAreaIds": []
           },
           {
-            "type": "DOOR",
+            "type": "OPEN",
             "areaId": "38",
             "losAreaIds": []
           },
@@ -2306,7 +2217,7 @@
             "losAreaIds": []
           },
           {
-            "type": "DOOR",
+            "type": "OPEN",
             "areaId": "45",
             "losAreaIds": []
           }
@@ -2340,7 +2251,7 @@
         "name": "Hallway",
         "apertures": [
           {
-            "type": "DOOR",
+            "type": "OPEN",
             "areaId": "44",
             "losAreaIds": []
           },
@@ -2352,18 +2263,12 @@
           {
             "type": "DOOR",
             "areaId": "32",
-            "losAreaIds": [
-              "11",
-              "32"
-            ]
+            "losAreaIds": []
           },
           {
             "type": "DOOR",
             "areaId": "34",
-            "losAreaIds": [
-              "34",
-              "14"
-            ]
+            "losAreaIds": []
           }
         ],
         "polygon": [
@@ -2420,14 +2325,40 @@
       "18",
       "19"
     ],
-    "maxBabyCount": 18,
-    "maxAdultCount": 12,
-    "maxFragmentCount": 22,
-    "maxEggCount": 19,
-    "eggImageCount": 5,
-    "babyImageCount": 12,
-    "adultImageCount": 12,
-    "fragmentImageCount": 7,
+    "monsterMaxMap": {
+      "BABY": 18,
+      "ADULT": 12,
+      "FRAGMENT": 22,
+      "EGG": 19
+    },
+    "monsterImageCountMap": {
+      "BABY": 12,
+      "ADULT": 12,
+      "FRAGMENT": 7,
+      "EGG": 5
+    },
+    "monsterPropertyMap": {
+      "BABY": {
+        "movementAllowance": 1,
+        "attackDice": 2,
+        "constitution": 12
+      },
+      "ADULT": {
+        "movementAllowance": 2,
+        "attackDice": 4,
+        "constitution": 16
+      },
+      "FRAGMENT": {
+        "movementAllowance": 0,
+        "attackDice": 1,
+        "constitution": 8
+      },
+      "EGG": {
+        "movementAllowance": 0,
+        "attackDice": 0,
+        "constitution": 5
+      }
+    },
     "startingCounts": [
       {
         "babies": 4,

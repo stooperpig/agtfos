@@ -1,13 +1,14 @@
 import express, { Request, Response } from 'express';
 import { deleteGame, deleteReplay, doesGameExist, readGame, readGameList, readGames, readReplay, readScenario, writeGames, writeReplay } from '../utils/file-utils';
 import { GameEntry, GameStatus, NewGamePlayer } from '../shared/types/game-types';
-import { planBotPhase } from '../utils/bot-plan-movement';
 import { addGame, markDirty, retrieveGame } from '../cache/game-cache';
 import { pushAction } from '../utils/push-actions';
 import { createNewGame, createReplay } from '../handlers/new-game-handler';
 import { ActionHandlers, enqueue } from '../handlers/games-router-handlers';
-import { Action } from '../shared/types/action-types';
-import { ReplayType } from '../types/server-types';
+import { Action, ActionType, ActionUpdateMonsterPlans } from '../shared/types/action-types';
+import { ReplayType, Task } from '../types/server-types';
+import { startTask } from '../workers/async-task-queue';
+import { TaskIds } from '../tasks/tasks';
 
 const router = express.Router();
 export default router;
@@ -32,12 +33,12 @@ router.get('/list/:playerId', function (req: Request, res: Response) {
 router.get('/:gameId/replay', (req: Request, res: Response) => {
     try {
         const gameId = req.params.gameId;
-        
+
         if (gameId === undefined) {
             res.status(500);
             res.send({ message: 'Error: gameId is required part of uri' });
         } else {
-            const replay = readReplay(gameId, ReplayType.POST );
+            const replay = readReplay(gameId, ReplayType.POST);
             res.setHeader('Content-Type', 'application/json');
             res.send(replay);
         }
@@ -171,20 +172,6 @@ router.post('/', function (req: Request, res: Response) {
 
         const debugMode = req.body.debug === true;
 
-        // Object.values(scenario.board.areaDefinitionMap).forEach(area => {
-        //     area.weaponStacks.forEach((stack, index) => {
-        //         stack.coord = getPolygonCentroid(stack.polygon!);
-        //         delete stack.polygon;
-        //     });
-        //     area.coord = getPolygonCentroid(area.polygon);
-        //     delete area.crewStackPolygon
-        //     delete area.monsterStackPolygon
-        // });
-
-        // console.log(JSON.stringify(scenario.board.areaDefinitionMap));
-
-        // return;
-
         const gameState = createNewGame(newPlayers, scenario, debugMode);
         const replay = createReplay(gameState);
 
@@ -214,9 +201,31 @@ router.post('/', function (req: Request, res: Response) {
         gameList.games = [...gameList.games, gameEntry];
         writeGames(gameList);
 
-        const planData = planBotPhase(gameState, scenario);
+        //Run task to plan the first move for the monsters
+        const task: Task = {
+            payload: gameState,
+            type: TaskIds.PLAN_MONSTERS,
+            callBack: async (msg: any) => {
+                console.log(`createNewGame: received message from task for game: ${msg.payload.gameId} status: ${msg.status}`);
+                if (msg.status === 'done') {
+                    console.log(`createNewGame: received message from task for game: ${msg.payload.gameId} has finished`);
+                    const gameState = retrieveGame(msg.payload.gameId);
+                    const result = await enqueue(() => {
+                        return ActionHandlers[ActionType.UPDATE_MONSTER_PLANS](gameState, { type: ActionType.UPDATE_MONSTER_PLANS, payload: { actionsMap: msg.payload.actionsMap, nextCounterId: msg.payload.nextCounterId } } as ActionUpdateMonsterPlans);
+                    });
 
-        //todo:need to add the planning for the bot player   
+                    if (result !== undefined) {
+                        console.log("Action failed: " + result);
+                        return;
+                    }
+
+                    markDirty(gameId);
+                };
+            }
+        };
+
+        console.log(`createNewGame: starting task for game: ${gameState.id}`);
+        startTask(task);
 
         res.send({ message: 'Create game successful', gameId: gameState.id });
     } catch (error) {

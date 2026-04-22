@@ -1,8 +1,8 @@
 import './map.css';
-import React from 'react'
+import React, { createRef, useRef } from 'react'
 import { useAppDispatch, useAppSelector } from '../../../../constants/store';
 import { ImageData, ScenarioData } from '../../../../constants/game-constants';
-import { Coord, CounterMap, Player, Polygon, Stack, StackMap, AreaDefinition, Aperture, AreaDefinitionMap, Phase } from '../../../../shared/types/game-types';
+import { Coord, CounterMap, Player, Polygon, Stack, StackMap, AreaDefinition, Aperture, AreaDefinitionMap, Phase, Counter, Animation } from '../../../../shared/types/game-types';
 import { getMovementCost, pointInPolygon } from '../../utils/map-utils';
 import { sortCounterIdsBySelected, validateMove } from './utils';
 import { sendMessage, socketId } from '../../../../api/web-socket';
@@ -10,7 +10,7 @@ import { putData } from '../../../../api/api-utils';
 import { ActionAddAction, ActionMoveToCoord, ActionType } from '../../../../shared/types/action-types';
 
 const updateCanvas = (canvas: HTMLCanvasElement, scale: number, currentAreaId: string | undefined, stackMap: StackMap, counterMap: CounterMap,
-    areaDefinitionMap: AreaDefinitionMap, selectedCounterIds: string[]) => {
+    areaDefinitionMap: AreaDefinitionMap, selectedCounterIds: string[], animation?: Animation) => {
     const context: CanvasRenderingContext2D | null = canvas ? canvas.getContext('2d') : null;
     if (context == null) {
         console.log("context undefined");
@@ -45,7 +45,7 @@ const updateCanvas = (canvas: HTMLCanvasElement, scale: number, currentAreaId: s
 
             let stack = stackMap[area.id];
             if (stack !== undefined) {
-                renderStack(context, scale, counterMap, stack, selectedCounterIds)
+                renderStack(context, scale, counterMap, stack, selectedCounterIds, animation)
             }
         });
     }
@@ -69,7 +69,31 @@ const drawPolygon = (context: any, polygon: Polygon, scale: number) => {
     context.closePath();
 }
 
-const renderStack = (context: any, scale: number, counters: CounterMap, stack: Stack, selectedCounterIds: string[]) => {
+const renderCounter = (context: any, scale: number, counter: Counter, coord: Coord, index: number, isSelected: boolean) => {
+    const imageData = ImageData[counter.imageName];
+    if (imageData === undefined) {
+        console.log('image data not found for counter ' + counter.imageName);
+        return;
+    }
+
+    let counterImage = ImageData[counter.imageName].image;
+    if (counterImage && index < 10) {
+        const counterWidth = counterImage.naturalWidth * scale * 0.9;
+        const counterHeight = counterImage.naturalHeight * scale * 0.9;
+        const x = coord!.x * scale - (counterWidth / 2);
+        const y = coord!.y * scale - (counterHeight / 2);
+        context.drawImage(counterImage, x - (index * 3), y - (index * 3), counterWidth, counterHeight);
+        if (isSelected) {
+            context.strokeStyle = `rgb(255, 0, 0)`;
+            context.beginPath();
+            context.rect(x - (index * 3), y - (index * 3), counterWidth + 1, counterHeight + 1);
+            context.stroke();
+            context.closePath();
+        }
+    }
+}
+
+const renderStack = (context: any, scale: number, counters: CounterMap, stack: Stack, selectedCounterIds: string[], animation?: Animation) => {
     if (stack === undefined || stack.counterIds.length === 0) {
         return;
     }
@@ -78,28 +102,34 @@ const renderStack = (context: any, scale: number, counters: CounterMap, stack: S
 
     counterIds.forEach((counterId: string, index: number) => {
         const counter = counters[counterId];
-
-        const imageData = ImageData[counter.imageName];
-        if (imageData === undefined) {
-            console.log('image data not found for counter ' + counter.imageName);
+        if (animation && animation.counterId === counterId) {
+            // TODO: render animation
             return;
         }
+        
+        renderCounter(context, scale, counter, counter.coord!, index, selectedCounterIds && selectedCounterIds.includes(counterId));
 
-        let counterImage = ImageData[counter.imageName].image;
-        if (counterImage && index < 10) {
-            const counterWidth = counterImage.naturalWidth * scale * 0.9;
-            const counterHeight = counterImage.naturalHeight * scale * 0.9;
-            const x = counter.coord!.x * scale - (counterWidth / 2);
-            const y = counter.coord!.y * scale - (counterHeight / 2);
-            context.drawImage(counterImage, x - (index * 3), y - (index * 3), counterWidth, counterHeight);
-            if (selectedCounterIds && selectedCounterIds.includes(counterId)) {
-                context.strokeStyle = `rgb(255, 0, 0)`;
-                context.beginPath();
-                context.rect(x - (index * 3), y - (index * 3), counterWidth + 1, counterHeight + 1);
-                context.stroke();
-                context.closePath();
-            }
-        }
+        // const imageData = ImageData[counter.imageName];
+        // if (imageData === undefined) {
+        //     console.log('image data not found for counter ' + counter.imageName);
+        //     return;
+        // }
+
+        // let counterImage = ImageData[counter.imageName].image;
+        // if (counterImage && index < 10) {
+        //     const counterWidth = counterImage.naturalWidth * scale * 0.9;
+        //     const counterHeight = counterImage.naturalHeight * scale * 0.9;
+        //     const x = counter.coord!.x * scale - (counterWidth / 2);
+        //     const y = counter.coord!.y * scale - (counterHeight / 2);
+        //     context.drawImage(counterImage, x - (index * 3), y - (index * 3), counterWidth, counterHeight);
+        //     if (selectedCounterIds && selectedCounterIds.includes(counterId)) {
+        //         context.strokeStyle = `rgb(255, 0, 0)`;
+        //         context.beginPath();
+        //         context.rect(x - (index * 3), y - (index * 3), counterWidth + 1, counterHeight + 1);
+        //         context.stroke();
+        //         context.closePath();
+        //     }
+        // }
     });
 }
 
@@ -117,9 +147,72 @@ const getArea = (areaDefinitionMap: AreaDefinitionMap | undefined, coord: Coord)
     return undefined;
 }
 
+type AnimState = {
+    from: Coord
+    to: Coord
+    counterId: string
+    startTime: number
+    duration: number
+}
+
+const animateCounter = (canvas: HTMLCanvasElement, scale: number, aninmationRef: React.RefObject<{ [key: string]: AnimState }>, runningRef: React.RefObject<boolean>, counterMap: CounterMap) => {
+    const context = canvas.getContext('2d');
+    if (context && aninmationRef.current && runningRef.current) {
+        const imageData = ImageData["map"];
+        if (imageData == null) {
+            console.log("imageData undefined");
+            return;
+        }
+
+        const board = imageData.image;
+        if (board == null) {
+            console.log("image undefined");
+            return;
+        }
+
+        const boardWidth = board.naturalWidth * scale;
+        const boardHeight = board.naturalHeight * scale;
+
+        canvas.width = boardWidth;
+        canvas.height = boardHeight;
+
+        let stillAnimating = false
+        const animStates = Object.values(aninmationRef.current);
+        animStates.forEach(animState => {
+            const counter = counterMap[animState.counterId];
+            if (counter) {
+                const t = Math.min((performance.now() - animState.startTime) / animState.duration, 1);
+
+                const ease = t * t * (3 - 2 * t);
+
+                const x = animState.from.x + (animState.to.x - animState.from.x) * ease;
+                const y = animState.from.y + (animState.to.y - animState.from.y) * ease;
+
+                if (t === 1) {
+                    delete aninmationRef.current[animState.counterId];
+                    stillAnimating = Object.keys(aninmationRef.current).length > 0;
+                } else {
+                    stillAnimating = true;
+                }
+
+                console.log(`drawCounter(context, counter, ${x}, ${y}) stillAnimating: ${stillAnimating}`);
+                renderCounter(context, scale, counter, {x, y}, 0, true);
+            }
+        });
+
+        if (stillAnimating) {
+            requestAnimationFrame(() => animateCounter(canvas, scale, aninmationRef, runningRef, counterMap));
+        } else {
+            runningRef.current = false;
+        }
+    }
+}
 
 const Map = () => {
     const dispatch = useAppDispatch();
+
+    const animationsRef = useRef<{ [key: string]: AnimState }>({});
+    const runningRef = useRef(false);
 
     const selectedCounterIds = useAppSelector(state => state.selectedCounterIds);
     const currentAreaId = useAppSelector(state => state.currentAreaId);
@@ -130,23 +223,53 @@ const Map = () => {
     const areaDefinitionMap = ScenarioData.board.areaDefinitionMap;
     const gameId = useAppSelector(state => state.id);
     const replay = useAppSelector(state => state.replay);
+    const animation = useAppSelector(state => state.replay?.activeState?.animation);
 
     let player: Player | undefined = undefined;
 
-    const canvasRef = React.createRef<HTMLCanvasElement>();
+    const mainCanvasRef = useRef<HTMLCanvasElement>(null);
+    const animationCanvasRef = useRef<HTMLCanvasElement>(null);
     //let clickTimer: NodeJS.Timeout | undefined = undefined;
 
     React.useEffect(() => {
-        if (canvasRef.current) {
-            const canvas: HTMLCanvasElement = canvasRef.current;
+        console.log('animation', animation);
+        if (animation !== undefined && animationCanvasRef.current) {
+            animationsRef.current[animation.counterId] = {
+                from: animation.fromCoord,
+                to: animation.toCoord,
+                counterId: animation.counterId,
+                startTime: performance.now(),
+                duration: 300
+            };
+            const canvas: HTMLCanvasElement = animationCanvasRef.current;
+            startLoop(canvas)
+        }
+    }, [animation, animationCanvasRef]);
+
+    React.useEffect(() => {
+        if (mainCanvasRef.current) {
+            const canvas: HTMLCanvasElement = mainCanvasRef.current;
             if (replay && replay.show && replay.activeState) {
-                updateCanvas(canvas, mapScale, currentAreaId, replay.activeState.stackMap, replay.activeState.counterMap, areaDefinitionMap, selectedCounterIds);
+                updateCanvas(canvas, mapScale, currentAreaId, replay.activeState.stackMap, replay.activeState.counterMap, areaDefinitionMap, selectedCounterIds, replay.activeState.animation);
                 return;
             } else {
                 updateCanvas(canvas, mapScale, currentAreaId, stackMap, counterMap, areaDefinitionMap, selectedCounterIds);
             }
         }
-    }, [canvasRef, currentAreaId, mapScale, stackMap, areaDefinitionMap, selectedCounterIds, replay]);
+    }, [mainCanvasRef, currentAreaId, mapScale, stackMap, areaDefinitionMap, selectedCounterIds, replay]);
+
+    function startLoop(canvas: HTMLCanvasElement) {
+        console.log('startLoop');
+        if (!runningRef.current && canvas) {
+            console.log('starting loop');
+            runningRef.current = true
+            //const canvas: HTMLCanvasElement = canvasRef.current;
+            if (replay && replay.show && replay.activeState && animationsRef.current) {
+                console.log('animating counter');
+                requestAnimationFrame(() => animateCounter(canvas, mapScale, animationsRef, runningRef, replay.activeState!.counterMap));
+            }
+        }
+    }
 
     const handleLeftClick = (event: React.MouseEvent, scale: number) => {
         const posX = event.nativeEvent.offsetX;
@@ -184,7 +307,7 @@ const Map = () => {
             return counter.coord!
         });
 
-        const movementCost   = getMovementCost(currentAreaId!, newArea!.id);
+        const movementCost = getMovementCost(currentAreaId!, newArea!.id);
         const moveToAction: ActionMoveToCoord = { type: ActionType.MOVE_TO_COORD, payload: { counterIds: [...selectedCounterIds], fromAreaId: currentAreaId!, fromCoords: fromCoords, toAreaId: newArea!.id, toCoord: { x: posX / scale, y: posY / scale }, movementCost } };
         console.log(JSON.stringify(moveToAction));
         putData(`api/games/${gameId}/action`, { socketId, action: moveToAction }).then((resp) => {
@@ -199,7 +322,8 @@ const Map = () => {
 
     return (
         <div className="map">
-            <canvas ref={canvasRef} className="map-canvas" onClick={(event) => handleLeftClick(event, mapScale)} onContextMenu={(event) => handleRightClick(event, mapScale)}></canvas>
+            <canvas ref={mainCanvasRef} className="map-canvas" onClick={(event) => handleLeftClick(event, mapScale)} onContextMenu={(event) => handleRightClick(event, mapScale)}></canvas>
+            <canvas ref={animationCanvasRef} className="map-canvas animation" onClick={(event) => handleLeftClick(event, mapScale)} onContextMenu={(event) => handleRightClick(event, mapScale)}></canvas>
         </div>
     );
 }

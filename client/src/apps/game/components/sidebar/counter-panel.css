@@ -44,3 +44,8 @@ img.counter-panel-weapon-image {
     font-size: .60em;
     text-align: center;
 }
+
+.counter-panel-engaged {
+    color: white;
+    background-color: red;
+}   

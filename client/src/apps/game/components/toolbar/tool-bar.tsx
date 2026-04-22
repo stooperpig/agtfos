@@ -1,13 +1,14 @@
-import React from 'react';
+import React, { useState } from 'react';
 import './tool-bar.css';
 import { useAppDispatch, useAppSelector } from '../../../../constants/store';
 import { PlayerTurnStatus } from '../../../../shared/types/game-types';
-import { isCrew, isWeapon } from '../../../../shared/utils/counter-utils';
+import { isCrew, isMonster, isWeapon } from '../../../../shared/utils/counter-utils';
 import { putData } from '../../../../api/api-utils';
 import { socketId } from '../../../../api/web-socket';
 import ReplayControls from './replay-controller';
 import { ActionAddAction, ActionClearPlan, ActionDropWeapon, ActionGrabWeapon, ActionType } from '../../../../shared/types/action-types';
 import { Phase } from '../../../../shared/types/game-types';
+import { AttackModal } from '../modal/attack-modal/attack-modal';
 
 const ToolBar = () => {
     const dispatch = useAppDispatch();
@@ -18,14 +19,19 @@ const ToolBar = () => {
     const counterMap = useAppSelector(state => state.counterMap);
     const selectedCounterIds = useAppSelector(state => state.selectedCounterIds);
     const replayState = useAppSelector(state => state.replay);
+    const selectedArea = useAppSelector(state => state.currentAreaId);
+    const stackMap = useAppSelector(state => state.stackMap);
 
-    // const toggleModal = (value: boolean, setter: React.Dispatch<React.SetStateAction<boolean>>) => {
-    //     setter(!value);
-    // }
+    const [showAttackModal, setShowAttackModal] = useState<boolean>(false);
+
+    const toggleModal = (value: boolean, setter: React.Dispatch<React.SetStateAction<boolean>>) => {
+        setter(!value);
+    }
 
     const player = players !== undefined ? players.find(p => p.id === currentPlayerId) : undefined;
     const isPhaseCompleted = player?.turnStatus === PlayerTurnStatus.FINISHED;
     const selectedCounters = selectedCounterIds.map(id => counterMap[id]);
+    const selectedStack = selectedArea ? stackMap[selectedArea] : undefined;
 
     const defaultButtonClass = 'tool-bar-button tool-bar-button-hidden';
     const enabledButtonClass = 'tool-bar-button';
@@ -146,43 +152,73 @@ const ToolBar = () => {
                 return enabledButtonClass;
             }
         },
-        // {
-        //     handler: () => {
-        //         const crewCounter = selectedCounters.find(counter => isCrew(counter));
-        //         if (crewCounter) {
-        //             const action = { type: ActionType.DROP_WEAPON, payload: { crewCounterId: crewCounter.id } };
-        //             putData(`/api/games/${gameId}/action`, { socketId, action }).then(() => {
-        //                 dispatch(action);
-        //             }).catch((resp) => {
-        //                 dispatch({ type: ActionType.SET_STATUS_MESSAGE, payload: resp.message });
-        //             });
-        //         } else {
-        //             dispatch({ type: ActionType.SET_STATUS_MESSAGE, payload: "You must select one crew and one weapon" });
-        //         }
-        //     },
-        //     label: () => ('Replay'),
-        //     className: () => {
-        //         const crewCount = selectedCounters.reduce((acc, counter) => isCrew(counter) ? acc + 1 : acc, 0);
-        //         if (crewCount !== 1) {
-        //             return defaultButtonClass;
-        //         }
+        {
+            handler: () => {
+                // const crewCounter = selectedCounters.find(counter => isCrew(counter));
+                // if (crewCounter) {
+                //     const action = { type: ActionType.DROP_WEAPON, payload: { crewCounterId: crewCounter.id } };
+                //     putData(`/api/games/${gameId}/action`, { socketId, action }).then(() => {
+                //         dispatch(action);
+                //     }).catch((resp) => {
+                //         dispatch({ type: ActionType.SET_STATUS_MESSAGE, payload: resp.message });
+                //     });
+                // } else {
+                //     dispatch({ type: ActionType.SET_STATUS_MESSAGE, payload: "You must select one crew and one weapon" });
+                // }
+                toggleModal(showAttackModal, setShowAttackModal);
+            },
+            label: () => ('Plan Close Combat Attacks'),
+            className: () => {
+                // const crewCount = selectedCounters.reduce((acc, counter) => isCrew(counter) ? acc + 1 : acc, 0);
+                // if (crewCount !== 1) {
+                //     return defaultButtonClass;
+                // }
 
-        //         if (selectedCounters[0].usedMovementAllowance > 0) {
-        //             return defaultButtonClass;
-        //         }
+                // if (selectedCounters[0].usedMovementAllowance > 0) {
+                //     return defaultButtonClass;
+                // }
 
-        //         if (selectedCounters[0].weaponCounterId === undefined) {
-        //             return defaultButtonClass;
-        //         }
+                // if (selectedCounters[0].weaponCounterId === undefined) {
+                //     return defaultButtonClass;
+                // }
 
-        //         const crewCounter = selectedCounters.find(counter => isCrew(counter));
-        //         if (crewCounter!.actions && crewCounter?.actions.some(action => action.type === ActionType.GRAB_WEAPON)) {
-        //             return defaultButtonClass;
-        //         }
+                // const crewCounter = selectedCounters.find(counter => isCrew(counter));
+                // if (crewCounter!.actions && crewCounter?.actions.some(action => action.type === ActionType.GRAB_WEAPON)) {
+                //     return defaultButtonClass;
+                // }
+                if (phase === Phase.MOVE) {
+                    return defaultButtonClass;
+                }
 
-        //         return enabledButtonClass;
-        //     }
-        // }, 
+                if (!selectedArea || !selectedStack) {
+                    return defaultButtonClass;
+                }
+
+                const hasCrew = selectedStack.counterIds.some(counterId => {
+                    const counter = counterMap[counterId];
+                    return isCrew(counter)
+                });
+
+                if (!hasCrew) {
+                    return defaultButtonClass;
+                }
+
+                const hasEnemy = selectedStack.counterIds.some(counterId => {
+                    const counter = counterMap[counterId];
+                    return isMonster(counter)
+                });
+
+                if (!hasEnemy) {
+                    return defaultButtonClass;
+                }
+                
+                //check for selected area
+                //check for presence of crew in that area
+                //check for presence of monsters or crew with ranged weapons in that area
+
+                return enabledButtonClass;
+            }
+        }, 
         {
             handler: async () => {
                 // if (isPhaseCompleted) {
@@ -234,6 +270,7 @@ const ToolBar = () => {
     return (
         <div className="tool-bar">
             {renderButtons()}
+            <AttackModal show={showAttackModal} title={"Close Combat Attacks"} areaId={selectedArea} stack={selectedStack} closeHandler={() => toggleModal(showAttackModal, setShowAttackModal)} />
         </div>
     );
 }

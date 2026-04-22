@@ -1,5 +1,11 @@
 import { Action, ActionType } from "./action-types"
 
+export interface Animation {
+    counterId: string
+    fromCoord: Coord
+    toCoord: Coord
+}
+
 export interface AreaDefinition {
     id: string
     name: string
@@ -31,6 +37,13 @@ export interface Aperture {
 export enum ApertureType {
     OPEN = "OPEN",
     DOOR = "DOOR"
+}
+
+export interface AttackGroup {
+    targetCounterId: string;
+    attackingCounterIds: string[];
+    dice: number
+    targetDice: number
 }
 
 export interface Board {
@@ -69,6 +82,8 @@ export interface Counter {
     ownerCounterId?: string
     engaged: boolean
     spotted: boolean
+    attacking: boolean
+    moved: boolean
 }
 
 export interface CounterMap {
@@ -152,19 +167,34 @@ export interface ImageMap {
 
 export interface MonsterSettings {
     startingMonsterAreaIds: string[]
-    maxBabyCount: number
-    babyImageCount: number
-    maxAdultCount: number
-    adultImageCount: number
-    maxFragmentCount: number
-    fragmentImageCount: number
-    maxEggCount: number
-    eggImageCount: number
+    monsterMaxMap: {
+        [key: string]: number
+    }
+    monsterImageCountMap: {
+        [key: string]: number
+    }
+    //maxBabyCount: number
+    //babyImageCount: number
+    //maxAdultCount: number
+    //adultImageCount: number
+    //maxFragmentCount: number
+    //fragmentImageCount: number
+    //maxEggCount: number
+    //eggImageCount: number
     startingCounts: {
         babies: number
         adults: number
         eggs: number
-    }[]
+    }[],
+    monsterPropertyMap: {
+        [key: string]: MonsterProperties
+    }
+}
+
+export interface MonsterProperties {
+    movementAllowance: number
+    attackDice: number
+    constitution: number
 }
 
 // export type MoveToCoordAction = {
@@ -228,6 +258,7 @@ export enum PlayerType {
 export interface ReplayState {
     counterMap: CounterMap
     stackMap: StackMap
+    animation?: Animation
 }
 
 export interface Replay {
@@ -259,9 +290,15 @@ export interface ReplayMovementElement {
     toAreaId?: string;
     toCoord?: Coord;
     weaponCounterId?: string;
-    movementCost: number;
-    engagedData: { [key:string]: boolean };   //todo: this probably needs to set property on all effected counters [] not just the moving counter,  
-    spottedData: { [key:string]: boolean };   //todo: this probably needs to set property on all effected counters (map) not just the moving counter,
+    movementCost: number
+    nextType?: CounterType;
+    newCounterId?: string;
+    movementAllowance?: number;
+    attackDice?: number;
+    constitution?: number;
+    imageName?: string;
+    engagedData: { [key: string]: boolean };   //todo: this probably needs to set property on all effected counters [] not just the moving counter,  
+    spottedData: { [key: string]: boolean };   //todo: this probably needs to set property on all effected counters (map) not just the moving counter,
 }
 
 export interface ReplayCounter {

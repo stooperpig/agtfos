@@ -1,10 +1,18 @@
 .map {
+    position: relative;
     flex-grow: 1;
     background-color: black;
     overflow: auto;
 }
 
-.mapCanvas {
+.map-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+.map-canvas.animation {
+    z-index: 1;
 }
 
 .fuckit {

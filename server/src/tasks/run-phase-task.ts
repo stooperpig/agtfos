@@ -1,9 +1,9 @@
 import cloneDeep from "lodash.clonedeep";
-import { Action, ActionDropWeapon, ActionGrabWeapon, ActionMoveToCoord, ActionType } from "../shared/types/action-types";
+import { Action, ActionDropWeapon, ActionGrabWeapon, ActionGrowMonster, ActionLayEgg, ActionMoveToCoord, ActionType } from "../shared/types/action-types";
 import { Counter, CounterMap, CounterType, GameState, Phase, PlayerTurnStatus, Replay, ReplayAttackElement, ReplayElements, ReplayMovementElement } from "../shared/types/game-types";
 import { isCrew, isMonster, isWeapon } from "../shared/utils/counter-utils";
 import { shuffleArray } from "../shared/utils/dice-utils";
-import { processDropWeapon, processGrabWeapon, processMoveToCoord } from "../shared/state/reducers/game-reducers";
+import { processDropWeapon, processGrabWeapon, processGrowMonster, processLayEgg, processMoveToCoord } from "../shared/state/reducers/game-reducers";
 import { readReplay, writeReplay } from "../utils/file-utils";
 import { ReplayType } from "../types/server-types";
 import { checkEngagement } from "../shared/utils/movement-utils";
@@ -27,13 +27,13 @@ export const runPhase = (data: any, postMessage: (data: any) => void): void => {
         gameState.counterMap = cloneDeep(preReplay.startingState.counterMap);
         gameState.stackMap = cloneDeep(preReplay.startingState.stackMap);
 
-        //restore actions for counters that were in the current state
-        // currentCrewAndMonsterCounters.forEach(currentCounter => {
-        //     const startingCounter = gameState.counterMap[currentCounter.id];
-        //     if (startingCounter) {
-        //         startingCounter.actions = currentCounter.actions;
-        //     }
-        // });
+        //take the planned actions from the current state and apply them to the starting state
+        currentCrewAndMonsterCounters.forEach(currentCounter => {
+            const startingCounter = gameState.counterMap[currentCounter.id];
+            if (startingCounter) {
+                startingCounter.actions = currentCounter.actions;
+            }
+        });
 
         const replayElements: ReplayElements = {
             movementElements: [] as ReplayMovementElement[],
@@ -41,7 +41,7 @@ export const runPhase = (data: any, postMessage: (data: any) => void): void => {
         };
 
         if (gameState.phase === Phase.MOVE) {
-            const replayMovementElements = executeMovementPhase(gameState, currentCrewAndMonsterCounters);
+            const replayMovementElements = executeMovementPhase(gameState);
             console.log(`Created ${replayMovementElements.length} replay movement elements for game ${gameState.id}`);
             replayElements.movementElements = replayMovementElements;
         } else {
@@ -49,13 +49,10 @@ export const runPhase = (data: any, postMessage: (data: any) => void): void => {
             console.log(`Created ${replayAttackElements.length} replay attack elements`);
             replayElements.attackElements = replayAttackElements;
         }
-        // else {
-        //     const replayAttackElements = executeAttackPhaseActions(gameState);
-        //     console.log(`Created ${replayAttackElements.length} replay attack elements`);
-        //     replayElements.attackElements = replayAttackElements;
-        // }
+        
         resetCounters(gameState);
 
+        gameState.turn = gameState.phase === Phase.MOVE ? gameState.turn : gameState.turn + 1;
         gameState.phase = gameState.phase === Phase.MOVE ? Phase.ATTACK : Phase.MOVE;
         gameState.players.forEach(player => {
             player.turnStatus = PlayerTurnStatus.STARTED;
@@ -102,21 +99,22 @@ const executeAttackPhaseActions = (gameState: GameState): ReplayAttackElement[] 
     return [];
 }
 
-const executeMovementPhase = (gameState: GameState, currentCrewAndMonsterCounters: Counter[]): ReplayMovementElement[] => {
+const executeMovementPhase = (gameState: GameState): ReplayMovementElement[] => {
     console.log(`Executing movement phase for game ${gameState.id}`);
     const replayMovementElements: ReplayMovementElement[] = [];
     //const crewAndMonsterCounters = Object.values(gameState.counterMap).filter(counter => !isWeapon(counter));
-    currentCrewAndMonsterCounters.forEach(counter => {
+    const crewAndMonsterCounters = Object.values(gameState.counterMap);
+    crewAndMonsterCounters.forEach(counter => {
         counter.engaged = false;
     });
 
     //process drop actions first
-    const countersWithDropActions = currentCrewAndMonsterCounters.filter(counter => counter.actions.some(action => action.type === ActionType.DROP_WEAPON));
+    const countersWithDropActions = crewAndMonsterCounters.filter(counter => counter.actions.some(action => action.type === ActionType.DROP_WEAPON));
     console.log(`Counters with drop actions: ${countersWithDropActions.length}`);
     countersWithDropActions.forEach(counter => {
         console.log(`Counter ${counter.id} has drop action`)
         const action = counter.actions.find(action => action.type === ActionType.DROP_WEAPON);
-        console.log(`Drop action: ${action}`)
+        console.log(`Drop action: ${JSON.stringify(action)}`)
         if (action) {
             const dropAction = action as ActionDropWeapon;
             processDropWeapon(gameState, dropAction);
@@ -135,12 +133,12 @@ const executeMovementPhase = (gameState: GameState, currentCrewAndMonsterCounter
     });
 
     //process grab actions second
-    const countersWithGrabActions = currentCrewAndMonsterCounters.filter(counter => counter.actions.some(action => action.type === ActionType.GRAB_WEAPON));
+    const countersWithGrabActions = crewAndMonsterCounters.filter(counter => counter.actions.some(action => action.type === ActionType.GRAB_WEAPON));
     console.log(`Counters with grab actions: ${countersWithGrabActions.length}`);
     countersWithGrabActions.forEach(counter => {
         console.log(`Counter ${counter.id} has grab action`)
         const action = counter.actions.find(action => action.type === ActionType.GRAB_WEAPON);
-        console.log(`Grab action: ${action}`)
+        console.log(`Grab action: ${JSON.stringify(action)}`)
         if (action) {
             const grabAction = action as ActionGrabWeapon;
             processGrabWeapon(gameState, grabAction);
@@ -158,6 +156,64 @@ const executeMovementPhase = (gameState: GameState, currentCrewAndMonsterCounter
         }
     });
 
+    //process lay egg actions third
+    const countersWithLayEggActions = crewAndMonsterCounters.filter(counter => counter.actions.some(action => action.type === ActionType.LAY_EGG));
+    console.log(`Counters with lay egg actions: ${countersWithLayEggActions.length}`);
+    countersWithLayEggActions.forEach(counter => {
+        console.log(`Counter ${counter.id} has lay egg action`)
+        const action = counter.actions.find(action => action.type === ActionType.LAY_EGG);
+        console.log(`Lay egg action: ${JSON.stringify(action)}`)
+        if (action) {
+            const layEggAction = action as ActionLayEgg;
+            processLayEgg(gameState, layEggAction);
+            const replayMovementElement: ReplayMovementElement = {
+                type: ActionType.LAY_EGG,
+                counterId: layEggAction.payload.counterId,
+                fromAreaId: layEggAction.payload.fromAreaId,
+                fromCoord: layEggAction.payload.fromCoord,
+                weaponCounterId: undefined,
+                movementCost: 0,
+                engagedData: {},
+                spottedData: {},
+                newCounterId: layEggAction.payload.newCounterId,
+                movementAllowance: layEggAction.payload.movementAllowance,
+                attackDice: layEggAction.payload.attackDice,
+                constitution: layEggAction.payload.constitution,
+                imageName: layEggAction.payload.imageName
+            };
+            replayMovementElements.push(replayMovementElement);
+        }
+    });
+
+    //process grow monster actions fourth
+    const countersWithGrowMonsterActions = crewAndMonsterCounters.filter(counter => counter.actions.some(action => action.type === ActionType.GROW_MONSTER));
+    console.log(`Counters with grow monster actions: ${countersWithGrowMonsterActions.length}`);
+    countersWithGrowMonsterActions.forEach(counter => {
+        console.log(`Counter ${counter.id} has grow monster action`)
+        const action = counter.actions.find(action => action.type === ActionType.GROW_MONSTER);
+        console.log(`Grow monster action: ${JSON.stringify(action)}`)
+        if (action) {
+            const growMonsterAction = action as ActionGrowMonster;
+            processGrowMonster(gameState, growMonsterAction);
+            const replayMovementElement: ReplayMovementElement = {
+                type: ActionType.GROW_MONSTER,
+                counterId: growMonsterAction.payload.counterId,
+                fromAreaId: growMonsterAction.payload.fromAreaId,
+                fromCoord: growMonsterAction.payload.fromCoord,
+                weaponCounterId: undefined,
+                movementCost: 0,
+                engagedData: {},
+                spottedData: {},
+                nextType: growMonsterAction.payload.nextType,
+                movementAllowance: growMonsterAction.payload.movementAllowance,
+                attackDice: growMonsterAction.payload.attackDice,
+                constitution: growMonsterAction.payload.constitution,
+                imageName: growMonsterAction.payload.imageName
+            };
+            replayMovementElements.push(replayMovementElement);
+        }
+    });
+
     //process all actions but will basically ignore the drops/grabs since they have already been processed
     let processedAction = true;
     let index = 0;
@@ -166,9 +222,9 @@ const executeMovementPhase = (gameState: GameState, currentCrewAndMonsterCounter
         ++count;
         processedAction = false;
         console.log(`Processing action index ${index}`);
-        for (let i = 0; i < currentCrewAndMonsterCounters.length; i++) {
-            const counter = currentCrewAndMonsterCounters[i];
-            if (counter.actions && counter.actions.length > index) {
+        for (let i = 0; i < crewAndMonsterCounters.length; i++) {
+            const counter = crewAndMonsterCounters[i];
+            if (!counter.engaged && counter.actions && counter.actions.length > index) {
                 console.log(`Counter ${counter.id} has ${counter.actions.length} actions`);
                 processedAction = true;
                 const action = counter.actions[index];
@@ -207,10 +263,10 @@ const executeMovementPhase = (gameState: GameState, currentCrewAndMonsterCounter
                             const activeCounter = gameState.counterMap[engagedCounterId];
                             activeCounter.engaged = true;
 
-                            const planningCounter = currentCrewAndMonsterCounters.find(counter => counter.id === engagedCounterId);
-                            if (planningCounter && planningCounter.actions && planningCounter.actions.length - 1 > index) {
-                                planningCounter.actions.splice(index + 1);
-                            }
+                            // const planningCounter = currentCrewAndMonsterCounters.find(counter => counter.id === engagedCounterId);
+                            // if (planningCounter && planningCounter.actions && planningCounter.actions.length - 1 > index) {
+                            //     planningCounter.actions.splice(index + 1);
+                            // }
                         });
                     }
                 }
@@ -218,7 +274,7 @@ const executeMovementPhase = (gameState: GameState, currentCrewAndMonsterCounter
         }
 
         if (processedAction) {
-            shuffleArray(currentCrewAndMonsterCounters);
+            shuffleArray(crewAndMonsterCounters);
             index++;
         }
     }

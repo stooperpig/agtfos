@@ -1,6 +1,6 @@
-import { addGame, flush } from "../cache/game-cache";
-import { processAddAction, processClearPlan, processDropWeapon, processGrabWeapon, processMoveToCoord, processPhaseComplete } from "../shared/state/reducers/game-reducers";
-import { Action, ActionAddAction, ActionClearPlan, ActionDropWeapon, ActionGrabWeapon, ActionMoveToCoord, ActionPhaseComplete, ActionType } from "../shared/types/action-types";
+import { addGame, flush, markDirty, retrieveGame } from "../cache/game-cache";
+import { processAddAction, processClearPlan, processDropWeapon, processGrabWeapon, processGrowMonster, processLayEgg, processMoveToCoord, processPhaseComplete, processUpdateCrewAttackPlans, processUpdateMonsterPlans } from "../shared/state/reducers/game-reducers";
+import { Action, ActionAddAction, ActionClearPlan, ActionDropWeapon, ActionGrabWeapon, ActionGrowMonster, ActionLayEgg, ActionMoveToCoord, ActionPhaseComplete, ActionType, ActionUpdateCrewAttackPlans, ActionUpdateMonsterPlans } from "../shared/types/action-types";
 import { GameState, PlayerTurnStatus } from "../shared/types/game-types";
 import { actionValidators } from "../state/action-validators";
 import { TaskIds } from "../tasks/tasks";
@@ -89,15 +89,36 @@ const handlePhaseComplete = (state: GameState, action: Action): string | undefin
                         type: "REFRESH_GAME",
                         payload: true
                     };
-                    
+
                     pushAction(JSON.stringify(action));
                     console.log(`handleNextPhase: received message from task for game: ${msg.payload.gameId} PushAction: ${JSON.stringify(action)}`);
 
-                    //const gameList = readGameList();
-                    //const gameEntry = gameList.games.find(game => game.id === msg.gameId);
-                    // if (gameEntry) {
+                    //Run task to plan the first move for the monsters
+                    const task: Task = {
+                        payload: newState,
+                        type: TaskIds.PLAN_MONSTERS,
+                        callBack: async (msg: any) => {
+                            console.log(`handleNextPhase plan monsters: received message from task for game: ${msg.payload.gameId} status: ${msg.status}`);
+                            if (msg.status === 'done') {
+                                console.log(`handleNextPhase plan monsters: received message from task for game: ${msg.payload.gameId} has finished`);
+                                const gameState = retrieveGame(msg.payload.gameId);
+                                const result = await enqueue(() => {
+                                    return ActionHandlers[ActionType.UPDATE_MONSTER_PLANS](gameState, { type: ActionType.UPDATE_MONSTER_PLANS, payload: { actionsMap: msg.payload.actionsMap, nextCounterId: msg.payload.nextCounterId } } as ActionUpdateMonsterPlans);
+                                });
 
-                    // }
+                                if (result !== undefined) {
+                                    console.log("handleNextPhase plan monsters: Action failed: " + result);
+                                    return;
+                                }
+
+                                markDirty(gameState.id);
+                            };
+                        }
+                    };
+
+                    console.log(`handleNextPhase: starting plan monster task for game: ${newState.id}`);
+                    startTask(task);
+
                 } else if (msg.status === 'done') {
                     console.log(`handleNextPhase: received message from task for game: ${msg.payload.gameId} has finished`);
                 };
@@ -110,12 +131,54 @@ const handlePhaseComplete = (state: GameState, action: Action): string | undefin
     return undefined;
 }
 
+const handleUpdateMonsterPlans = (state: GameState, action: Action): string | undefined => {
+    console.log("handleUpdateMonsterPlans: " + JSON.stringify(action));
+    const actionMap = action.payload.actionsMap as { [key: string]: Action[] };
+    state.nextCounterId = action.payload.nextCounterId;
+    let addAction: ActionAddAction;
+    Object.entries(actionMap).forEach(([key, actions]) => {
+        actions.forEach(action => {
+            switch (action.type) {
+                case ActionType.MOVE_TO_COORD:
+                    //processMoveToCoord(state, action as ActionMoveToCoord);
+                    processAddAction(state, { type: ActionType.ADD_ACTION, payload: { counterIds: [key], actionToAdd: action } } as ActionAddAction);
+                    break;
+                case ActionType.GROW_MONSTER:
+                    addAction = { type: ActionType.ADD_ACTION, payload: { counterIds: [key], actionToAdd: action } };
+                    console.log("handleUpdateMonsterPlans: GROW_MONSTER action: " + JSON.stringify(addAction));
+                    //processGrowMonster(state, action as ActionGrowMonster);
+                    processAddAction(state, addAction);
+                    break;
+                case ActionType.LAY_EGG:
+                    addAction = { type: ActionType.ADD_ACTION, payload: { counterIds: [key], actionToAdd: action } };
+                    console.log("handleUpdateMonsterPlans: LAY_EGG action: " + JSON.stringify(addAction));
+                    //processLayEgg(state, action as ActionLayEgg);
+                    processAddAction(state, addAction);
+                    break;
+            }
+        });
+    });
+
+    //console.log(`handleUpdateMonsterPlans: after processing actions ${JSON.stringify(state)}`);
+
+
+    //processUpdateMonsterPlans(state, action as ActionUpdateMonsterPlans);
+    return undefined;
+}
+
+export function handleUpdateCrewAttackPlans(gameState: GameState, action: Action): string | undefined {
+    processUpdateCrewAttackPlans(gameState, action as ActionUpdateCrewAttackPlans);
+    return undefined;
+}
+
 export const ActionHandlers: { [key: string]: (gameState: GameState, action: Action) => string | undefined } = {
     [ActionType.MOVE_TO_COORD]: handleMoveToCoord,
     [ActionType.GRAB_WEAPON]: handleGrabWeapon,
     [ActionType.DROP_WEAPON]: handleDropWeapon,
     [ActionType.CLEAR_PLAN]: handleClearPlan,
-    [ActionType.PHASE_COMPLETE]: handlePhaseComplete
+    [ActionType.PHASE_COMPLETE]: handlePhaseComplete,
+    [ActionType.UPDATE_MONSTER_PLANS]: handleUpdateMonsterPlans,
+    [ActionType.UPDATE_CREW_ATTACK_PLANS]: handleUpdateCrewAttackPlans
 };
 
 let last = Promise.resolve()

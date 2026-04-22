@@ -8,6 +8,7 @@ import {
     processMoveToCoord, processRefreshGame, processSelectCounter, processSelectArea, processSetStatusMessage, processUpdateClientCount,
     processDeselectCounter, processPhaseComplete,
     processAddAction,
+    processUpdateCrewAttackPlans,
 } from "../shared/state/reducers/game-reducers";
 
 import { produce } from "immer";
@@ -58,6 +59,8 @@ export const rootReducer = (state = InitialGameState, action: Action): GameState
             return reduce(state, action, processRefreshReplay);
         case ActionType.ADD_ACTION:
             return reduce(state, action, processAddAction);
+        case ActionType.UPDATE_CREW_ATTACK_PLANS:
+            return reduce(state, action, processUpdateCrewAttackPlans);
     }
 
     return state;

@@ -49,9 +49,5 @@
 .side-bar-counters {
     flex-grow: 1;
     overflow-y: auto;
-
-    display:flex;
-    flex-direction: column;
-    flex-wrap:nowrap;
     align-content:flex-start;
 }

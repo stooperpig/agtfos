@@ -1,6 +1,6 @@
 import { readFileSync, writeFileSync, existsSync, unlinkSync, renameSync } from 'fs';
 import path from 'path';
-import { GameList, ScenarioList } from '../types/server-types'
+import { DiceTableData, GameList, ScenarioList } from '../types/server-types'
 import { GameState, Replay, Scenario } from '../shared/types/game-types'
 import { ReplayType } from '../types/server-types'
 
@@ -33,6 +33,12 @@ export const deleteReplay = (gameId: string, type: ReplayType): void => {
 export const doesGameExist = (gameId: string): boolean => {
     const filePath = path.join(process.cwd(), `/data/games/game-${gameId}.json`);
     return existsSync(filePath);
+}
+
+export const readDiceTable = (percentage: number): DiceTableData => {
+    const file = path.join(process.cwd(), '/data/tables', `dice-table-${percentage}.json`);
+    const table = JSON.parse(readFileSync(file, 'utf8'));
+    return table;
 }
 
 export const readGame = (gameId: string, version: string | undefined = undefined): GameState => {

@@ -2,13 +2,15 @@ import cloneDeep from "lodash.clonedeep";
 import { InitialGameState } from "../constants/initial-state";
 import { GameState } from "../shared/types/game-types";
 import {
-    processClearPlan,
     processDropWeapon,
     processGrabWeapon,
     processMoveToCoord, processRefreshGame, processSelectCounter, processSelectArea, processSetStatusMessage, processUpdateClientCount,
     processDeselectCounter, processPhaseComplete,
-    processAddAction,
-    processUpdateCrewAttackPlans,
+    processNextPhase,
+    processCreateAttackGroup,
+    processRemoveCounterFromAttackGroup,
+    processAddCounterToAttackGroup,
+    processDeleteAttackGroup,
 } from "../shared/state/reducers/game-reducers";
 
 import { produce } from "immer";
@@ -17,8 +19,6 @@ import { Action, ActionType } from "../shared/types/action-types";
 
 export const rootReducer = (state = InitialGameState, action: Action): GameState => {
     switch (action.type) {
-        case ActionType.CLEAR_PLAN:
-            return reduce(state, action, processClearPlan);
         case ActionType.GRAB_WEAPON:
             return reduce(state, action, processGrabWeapon);
         case ActionType.DESELECT_COUNTER:
@@ -57,13 +57,20 @@ export const rootReducer = (state = InitialGameState, action: Action): GameState
             return reduce(state, action, processReplayEnd);
         case ActionType.REFRESH_REPLAY:
             return reduce(state, action, processRefreshReplay);
-        case ActionType.ADD_ACTION:
-            return reduce(state, action, processAddAction);
-        case ActionType.UPDATE_CREW_ATTACK_PLANS:
-            return reduce(state, action, processUpdateCrewAttackPlans);
+        case ActionType.NEXT_PHASE:
+            return reduce(state, action, processNextPhase);
+        case ActionType.CREATE_ATTACK_GROUP:
+            return reduce(state, action, processCreateAttackGroup);
+        case ActionType.REMOVE_COUNTER_FROM_ATTACK_GROUP:
+            return reduce(state, action, processRemoveCounterFromAttackGroup);
+        case ActionType.ADD_COUNTER_TO_ATTACK_GROUP:
+            return reduce(state, action, processAddCounterToAttackGroup);
+        case ActionType.DELETE_ATTACK_GROUP:
+            return reduce(state, action, processDeleteAttackGroup);
+        default:
+            console.log('Unknown action type:', action.type);
+            return state;
     }
-
-    return state;
 }
 
 const DEBUG = false;

@@ -3,95 +3,14 @@ import { useState } from "react";
 import React from "react";
 import Modal from "../modal";
 import { useDispatch, useSelector } from "react-redux";
-import { Stack, Counter, CounterType } from "../../../../../shared/types/game-types";
+import { Stack, Counter, CounterType, AttackGroup } from "../../../../../shared/types/game-types";
 import { isCrew, isMonster } from "../../../../../shared/utils/counter-utils";
-import { RootState } from "../../../../../constants/store";
-
-interface CounterDisplayProps {
-    counter: Counter;
-    selected: boolean;
-    unavailable?: boolean;
-    onClick: () => void;
-    isWeapon?: boolean;
-}
-
-const toggleWeaponSelection = (weaponId: string) => {
-    if (activeGroupId) {
-        // Add weapon to active group instead of selection
-        addWeaponToActiveGroup(weaponId);
-    } else {
-        // Weapon selection for creating new groups
-        const usedWeaponIds = attackGroups?.flatMap(group => group.attackingCounters?.map(c => c.id))?.filter(Boolean) || [];
-        if (usedWeaponIds.includes(weaponId)) return; // Prevent selection if already in a group
-
-        setSelectedCrew(prev =>
-            prev.includes(weaponId)
-                ? prev.filter(id => id !== weaponId)
-                : [...prev, weaponId]
-        );
-    }
-}
-
-const CounterDisplay = ({ counter, selected, unavailable = false, onClick, isWeapon = false }: CounterDisplayProps) => {
-    const imageUrl = `/images/${counter.imageName}.png`;
-    const counterMap = useSelector((state: RootState) => state.counterMap);
-
-    const renderWeapon = () => {
-        if (counter.weaponCounterId) {
-            const weaponCounter = counterMap[counter.weaponCounterId];
-            if (weaponCounter) {
-                return (
-                    <div className="sidebar-counter-weapon" onClick={(e) => {
-                        e.stopPropagation();
-                        toggleWeaponSelection(counter.weaponCounterId);
-                    }}>
-                        <img className="sidebar-counter-weapon-image" src={`/images/${weaponCounter.imageName}.png`} alt={weaponCounter.name} />
-                    </div>
-                );
-            }
-        }
-        return null;
-    };
-
-    const renderCounterData = () => {
-        if (isMonster(counter)) {
-            return (
-                <div className="sidebar-counter-data">
-                    {counter.name}<br />
-                    Mv: {counter.movementAllowance - counter.usedMovementAllowance}/{counter.movementAllowance}
-                </div>
-            );
-        }
-
-        return (
-            <div className="sidebar-counter-data">
-                {counter.name}<br />
-                Mv: {counter.movementAllowance - counter.usedMovementAllowance}/{counter.movementAllowance}
-            </div>
-        );
-    };
-
-    return (
-        <div
-            className={`sidebar-counter ${selected ? 'selected' : ''} ${unavailable ? 'unavailable' : ''}`}
-            onClick={unavailable ? undefined : onClick}
-        >
-            <div className="sidebar-counter-main">
-                <div className="sidebar-counter-content">
-                    <img className="sidebar-counter-image" src={imageUrl} alt={counter.imageName} />
-                    {renderCounterData()}
-                </div>
-                {renderWeapon()}
-            </div>
-        </div>
-    );
-};
-
-interface AttackGroup {
-    id: string;
-    attackingCounters: Counter[];
-    targetCounters: Counter[];
-}
+import { RootState, useAppDispatch, useAppSelector } from "../../../../../constants/store";
+import { CounterDisplay } from "./counter-display";
+import { ActionAddCounterToAttackGroup, ActionCreateAttackGroup, ActionDeleteAttackGroup, ActionRemoveCounterFromAttackGroup, ActionType } from "../../../../../shared/types/action-types";
+import { putData } from "../../../../../api/api-utils";
+import { socketId } from '../../../../../api/web-socket';
+import { AttackGroupDisplay } from "./attack-group-display";
 
 interface PropTypes {
     closeHandler: () => void;
@@ -102,12 +21,16 @@ interface PropTypes {
 }
 
 export const AttackModal = (props: PropTypes) => {
-    const dispatch = useDispatch();
-    const counterMap = useSelector((state: RootState) => state.counterMap);
-    const [attackGroups, setAttackGroups] = useState<AttackGroup[]>([]);
-    const [selectedCrew, setSelectedCrew] = useState<string[]>([]);
+    const dispatch = useAppDispatch();
+    const gameId = useAppSelector((state: RootState) => state.id);
+    const counterMap = useAppSelector((state: RootState) => state.counterMap);
+    const allAttackGroups = useAppSelector((state: RootState) => state.attackGroups ?? []);
+    //const [attackGroups, setAttackGroups] = useState<AttackGroup[]>([]);
+    const [selectedCrewOrWeapon, setSelectedCrewOrWeapon] = useState<string[]>([]);
     const [selectedMonsters, setSelectedMonsters] = useState<string[]>([]);
-    const [activeGroupId, setActiveGroupId] = useState<string | null>(null);
+    const [activeGroupId, setActiveGroupId] = useState<string | undefined>(undefined);
+
+    const attackGroups = allAttackGroups.filter(attackGroup => attackGroup.areaId === props.areaId);
 
     const handleClose = () => {
         props.closeHandler();
@@ -120,41 +43,17 @@ export const AttackModal = (props: PropTypes) => {
 
     const getAvailableCrewCounters = (): Counter[] => {
         const allCrew = getStackCounters().filter(counter => isCrew(counter));
-        const usedAttackIds = attackGroups?.flatMap(group => group.attackingCounters.map(c => c.id)) || [];
-        const usedWeaponIds = attackGroups?.flatMap(group =>
-            group.attackingCounters
-                .filter(counter => counter.weaponCounterId)
-                .map(counter => counter.weaponCounterId)
-        ) || [];
+        const usedAttackIds = attackGroups?.flatMap(group => group.attackingCounterIds.map(counterId => counterId)) || [];
 
         return allCrew.filter(counter => {
             // Crew is unavailable if either itself or its weapon is used
-            return !usedAttackIds.includes(counter.id) && !usedWeaponIds.includes(counter.id);
-        });
-    }
-
-    const getAvailableWeapons = (): Counter[] => {
-        const allWeapons = getStackCounters().filter(counter => counter.type === CounterType.WEAPON);
-        const usedWeaponIds = attackGroups?.flatMap(group => group.attackingCounters.map(c => c.id)) || [];
-        const usedCrewIds = attackGroups?.flatMap(group =>
-            group.attackingCounters
-                .filter(counter => isCrew(counter))
-                .map(counter => counter.id)
-        ) || [];
-
-        return allWeapons.filter(weapon => {
-            // Weapon is unavailable if either itself or its crew is used
-            const crewCounter = Object.values(counterMap).find(counter =>
-                counter.weaponCounterId === weapon.id
-            );
-            return !usedWeaponIds.includes(weapon.id) &&
-                (!crewCounter || !usedCrewIds.includes(crewCounter.id));
+            return !usedAttackIds.includes(counter.id) && !usedAttackIds.includes(counter.weaponCounterId || '');
         });
     }
 
     const getAvailableMonsterCounters = (): Counter[] => {
         const allMonsters = getStackCounters().filter(counter => isMonster(counter));
-        const usedMonsterIds = attackGroups?.flatMap(group => group.targetCounters.map(m => m.id)) || [];
+        const usedMonsterIds = attackGroups?.flatMap(group => group.targetCounterIds.map(counterId => counterId)) || [];
 
         return allMonsters.filter(counter => !usedMonsterIds.includes(counter.id));
     }
@@ -170,121 +69,220 @@ export const AttackModal = (props: PropTypes) => {
     const toggleCrewSelection = (counterId: string) => {
         if (activeGroupId) {
             // Add to active group instead of selection
-            addCrewToActiveGroup(counterId);
+            addCrewOrWeaponToActiveGroup(counterId);
         } else {
             // Existing selection logic for creating new groups
-            const usedCrewIds = attackGroups?.flatMap(group => group.attackingCounters?.map(c => c.id))?.filter(Boolean) || [];
-            if (usedCrewIds.includes(counterId)) return; // Prevent selection if already in a group
+            const usedCrewIds = attackGroups?.flatMap(group => group.attackingCounterIds)?.filter(Boolean) || [];
+            if (usedCrewIds.includes(counterId)) {
+                return; // Prevent selection if already in a group
+            }
 
-            setSelectedCrew(prev =>
-                prev.includes(counterId)
-                    ? prev.filter(id => id !== counterId)
-                    : [...prev, counterId]
-            );
+            setSelectedCrewOrWeapon(prev => prev.includes(counterId) ? prev.filter(id => id !== counterId) : [...prev, counterId]);
         }
     }
 
-    const addCrewToActiveGroup = (counterId: string) => {
+    const addCrewOrWeaponToActiveGroup = (counterId: string) => {
         if (!activeGroupId) return;
 
-        setAttackGroups((prevAttackGroups: AttackGroup[]) => {
-            return prevAttackGroups.map(group => {
-                if (group.id === activeGroupId) {
-                    const counter = counterMap[counterId];
-                    if (!counter || group.attackingCounters.some(c => c.id === counterId)) return group; // Already in group
+        const action: ActionAddCounterToAttackGroup = {
+            type: ActionType.ADD_COUNTER_TO_ATTACK_GROUP,
+            payload: {
+                attackGroupId: activeGroupId,
+                attackingCounterId: counterId,
+            }
+        };
 
-                    return {
-                        ...group,
-                        attackingCounters: [...group.attackingCounters, counter]
-                    };
-                }
-                return group;
-            });
+        console.log(JSON.stringify(action));
+        putData(`api/games/${gameId}/attackgroup`, { socketId, action: action }).then((resp) => {
+            dispatch(action);
+            setActiveGroupId(action.payload.attackGroupId);
+            //setSelectedCrewOrWeapon([]);
+            //setSelectedMonsters([]);
+        }).catch((resp) => {
+            dispatch({ type: ActionType.SET_STATUS_MESSAGE, payload: resp.message });
         });
+
+        // setAttackGroups((prevAttackGroups: AttackGroup[]) => {
+        //     return prevAttackGroups.map(group => {
+        //         if (group.id === activeGroupId) {
+        //             const counter = counterMap[counterId];
+        //             if (!counter || group.attackingCounterIds.includes(counterId)) return group; // Already in group
+
+        //             return {
+        //                 ...group,
+        //                 attackingCounters: [...group.attackingCounterIds, counter]
+        //             };
+        //         }
+        //         return group;
+        //     });
+        // });
     };
 
-    const addWeaponToActiveGroup = (weaponId: string) => {
-        if (!activeGroupId) return;
+    const addMonsterToActiveGroup = (counterId: string) => {
+        if (!activeGroupId) {
+            return;
+        }
 
-        setAttackGroups((prevAttackGroups: AttackGroup[]) => {
-            return prevAttackGroups.map(group => {
-                if (group.id === activeGroupId) {
-                    const weapon = counterMap[weaponId];
-                    if (!weapon || group.attackingCounters.some(c => c.id === weaponId)) return group; // Already in group
+        const group = attackGroups?.find(group => group.id === activeGroupId);
+        if (group?.targetCounterIds.some(counterId => isMonster(counterMap[counterId]))) {
+            return;
+        }
 
-                    return {
-                        ...group,
-                        attackingCounters: [...group.attackingCounters, weapon]
-                    };
-                }
-                return group;
-            });
+        const action: ActionAddCounterToAttackGroup = {
+            type: ActionType.ADD_COUNTER_TO_ATTACK_GROUP,
+            payload: {
+                attackGroupId: activeGroupId,
+                targetCounterId: counterId,
+            }
+        };
+
+        console.log(JSON.stringify(action));
+        putData(`api/games/${gameId}/attackgroup`, { socketId, action: action }).then((resp) => {
+            dispatch(action);
+            setActiveGroupId(action.payload.attackGroupId);
+            //setSelectedCrewOrWeapon([]);
+            //setSelectedMonsters([]);
+        }).catch((resp) => {
+            dispatch({ type: ActionType.SET_STATUS_MESSAGE, payload: resp.message });
         });
+
+        // setAttackGroups((prevAttackGroups: AttackGroup[]) => {
+        //     return prevAttackGroups.map(group => {
+        //         if (group.id === activeGroupId) {
+        //             const counter = counterMap[counterId];
+        //             if (!counter || group.targetCounterIds.includes(counterId)) return group; // Already in group
+
+        //             return {
+        //                 ...group,
+        //                 targetCounters: [...group.targetCounterIds, counter]
+        //             };
+        //         }
+        //         return group;
+        //     });
+        // });
     };
 
     const toggleMonsterSelection = (counterId: string) => {
-        const usedMonsterIds = attackGroups?.flatMap(group => group.targetCounters?.map(m => m.id))?.filter(Boolean) || [];
-        if (usedMonsterIds.includes(counterId)) return; // Prevent selection if already in a group
+        if (selectedMonsters.includes(counterId)) {
+            setSelectedMonsters(prev => prev.filter(id => id !== counterId));
+            return;
+        }
 
-        setSelectedMonsters(prev => {
-            if (prev.includes(counterId)) {
-                return prev.filter(id => id !== counterId);
-            } else if (prev.length === 0) {
-                return [counterId]; // Only allow one monster selection
-            } else {
-                return prev; // Prevent multiple monster selection
+        if (selectedMonsters.length >= 1) {
+            return;
+        }
+
+        if (activeGroupId) {
+            // Add to active group instead of selection
+            addMonsterToActiveGroup(counterId);
+        } else {
+            // Existing selection logic for creating new groups
+            const usedMonsterIds = attackGroups?.flatMap(group => group.targetCounterIds)?.filter(Boolean) || [];
+            if (usedMonsterIds.includes(counterId)) {
+                return; // Prevent selection if already in a group
             }
-        });
+
+            setSelectedMonsters(prev => prev.includes(counterId) ? prev.filter(id => id !== counterId) : [...prev, counterId]);
+        }
     };
 
     const createAttackGroup = () => {
-        if (selectedCrew.length === 0 || selectedMonsters.length === 0) return;
-        if (selectedMonsters.length > 1) return; // Ensure only one monster per group
-
-        const crew = selectedCrew.map(id => counterMap[id]).filter(Boolean);
-        const monsters = selectedMonsters.map(id => counterMap[id]).filter(Boolean);
-
-        const newGroup: AttackGroup = {
-            id: `group-${Date.now()}`,
-            attackingCounters: crew,
-            targetCounters: monsters
+        console.log('create attack group');
+        const action: ActionCreateAttackGroup = {
+            type: ActionType.CREATE_ATTACK_GROUP,
+            payload: {
+                areaId: props.areaId!,
+                attackGroupId: crypto.randomUUID(),
+            }
         };
 
-        setAttackGroups(prevAttackGroups => [...prevAttackGroups, newGroup]);
-        setSelectedCrew([]);
-        setSelectedMonsters([]);
+        console.log(JSON.stringify(action));
+        putData(`api/games/${gameId}/attackgroup`, { socketId, action: action }).then((resp) => {
+            dispatch(action);
+            setActiveGroupId(action.payload.attackGroupId);
+            setSelectedCrewOrWeapon([]);
+            setSelectedMonsters([]);
+        }).catch((resp) => {
+            dispatch({ type: ActionType.SET_STATUS_MESSAGE, payload: resp.message });
+        });
+        // const crew = selectedCrewOrWeapon.map(id => counterMap[id]).filter(Boolean);
+        // const monsters = selectedMonsters.map(id => counterMap[id]).filter(Boolean);
+
+        // const newGroup: AttackGroup = {
+        //     id: `group-${Date.now()}`,
+        //     attackingCounterIds: crew.length > 0 ? crew.map(c => c.id) : [],
+        //     targetCounterIds: monsters.length > 0 ? monsters.map(c => c.id) : []
+        // };
+
+        // setAttackGroups(prevAttackGroups => [...prevAttackGroups, newGroup]);
+        // setSelectedCrewOrWeapon([]);
+        // setSelectedMonsters([]);
+        // setActiveGroupId(newGroup.id);
     }
 
     const handleGroupClick = (groupId: string) => {
-        setActiveGroupId(groupId === activeGroupId ? null : groupId);
+        setActiveGroupId(groupId === activeGroupId ? undefined : groupId);
     };
 
     const removeCounterFromGroup = (groupId: string, counterId: string) => {
-        const updatedGroups = attackGroups.map(group => {
-            if (group.id === groupId) {
-                const updatedGroup = {
-                    ...group,
-                    crew: group.attackingCounters?.filter((c: Counter) => c.id !== counterId) || [],
-                    monsters: group.targetCounters?.filter((m: Counter) => m.id !== counterId) || []
-                };
+        console.log('Removing counter from group:', groupId, counterId);
 
-                // If group is empty after removal, delete it
-                if (updatedGroup.crew.length === 0 && updatedGroup.monsters.length === 0) {
-                    return null; // This will be filtered out
-                }
-
-                return updatedGroup;
+        const action: ActionRemoveCounterFromAttackGroup = {
+            type: ActionType.REMOVE_COUNTER_FROM_ATTACK_GROUP,
+            payload: {
+                attackGroupId: groupId,
+                counterId: counterId,
             }
-            return group;
+        };
+
+        console.log(JSON.stringify(action));
+        putData(`api/games/${gameId}/attackgroup`, { socketId, action: action }).then((resp) => {
+            dispatch(action);
+            setActiveGroupId(action.payload.attackGroupId);
+            //setSelectedCrewOrWeapon([]);
+            //setSelectedMonsters([]);
+        }).catch((resp) => {
+            dispatch({ type: ActionType.SET_STATUS_MESSAGE, payload: resp.message });
         });
-        setAttackGroups(updatedGroups.filter((group: AttackGroup | null) => group !== null) as AttackGroup[]);
+
+        // const updatedGroups = attackGroups.map(group => {
+        //     if (group.id === groupId) {
+        //         const updatedGroup = {
+        //             ...group,
+        //             attackingCounterIds: group.attackingCounterIds?.filter((id: string) => id !== counterId) || [],
+        //             targetCounterIds: group.targetCounterIds?.filter((id: string) => id !== counterId) || []
+        //         };
+
+        //         return updatedGroup;
+        //     }
+        //     return group;
+        // });
+        //setAttackGroups(updatedGroups);
     };
 
     const removeAttackGroup = (groupId: string) => {
-        setAttackGroups((prevAttackGroups: AttackGroup[]) => prevAttackGroups.filter(group => group.id !== groupId));
-        if (activeGroupId === groupId) {
-            setActiveGroupId(null);
-        }
+        //setAttackGroups((prevAttackGroups: AttackGroup[]) => prevAttackGroups.filter(group => group.id !== groupId));
+
+
+        const action: ActionDeleteAttackGroup = {
+            type: ActionType.DELETE_ATTACK_GROUP,
+            payload: {
+                attackGroupId: groupId
+            }
+        };
+
+        console.log(JSON.stringify(action));
+        putData(`api/games/${gameId}/attackgroup`, { socketId, action: action }).then((resp) => {
+            dispatch(action);
+            //setActiveGroupId(action.payload.attackGroupId);
+            if (activeGroupId === groupId) {
+                setActiveGroupId(attackGroups.find(group => group.id !== groupId)?.id || undefined);
+            }
+            //setSelectedCrewOrWeapon([]);
+            //setSelectedMonsters([]);
+        }).catch((resp) => {
+            dispatch({ type: ActionType.SET_STATUS_MESSAGE, payload: resp.message });
+        });
     }
 
     const handleSubmit = () => {
@@ -294,11 +292,6 @@ export const AttackModal = (props: PropTypes) => {
     }
 
     const submitForm = async (formData: FormData) => {
-        // if (taskForce === undefined || props.planet === undefined || props.star === undefined) {
-        //     return;
-        // } else {
-        //     return null;
-        // }
     }
 
     if (props.show) {
@@ -317,8 +310,8 @@ export const AttackModal = (props: PropTypes) => {
                                     <CounterDisplay
                                         key={counter.id}
                                         counter={counter}
-                                        selected={selectedCrew.includes(counter.id)}
-                                        onClick={() => toggleCrewSelection(counter.id)}
+                                        selected={selectedCrewOrWeapon.includes(counter.id) || selectedCrewOrWeapon.includes(counter.weaponCounterId || '')}
+                                        onClick={toggleCrewSelection}
                                     />
                                 ))}
                                 {getCrewCounters().filter(counter => !getAvailableCrewCounters().includes(counter)).map(counter => (
@@ -339,39 +332,14 @@ export const AttackModal = (props: PropTypes) => {
                                 <h3>Attack Groups</h3>
                                 <div className="attack-groups">
                                     {attackGroups.map(group => (
-                                        <div key={group.id} className={`attack-group ${group.id === activeGroupId ? 'active' : ''}`}
-                                            onClick={() => handleGroupClick(group.id)}
-                                        >
-                                            <div className="group-counters">
-                                                <div className="group-counters-list">
-                                                    {[...group.attackingCounters, ...group.targetCounters].map((counter: Counter) => (
-                                                        <div key={counter.id} className="group-counter"
-                                                            onContextMenu={(e) => {
-                                                                e.preventDefault();
-                                                                removeCounterFromGroup(group.id, counter.id);
-                                                            }}
-                                                        >
-                                                            <img
-                                                                className="group-counter-image-large"
-                                                                src={`/images/${counter.imageName}.png`}
-                                                                alt={counter.imageName}
-                                                                title={`${counter.name || counter.type} (${isCrew(counter) ? 'Crew' : 'Monster'})`}
-                                                            />
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                            <button
-                                                className="remove-group-x-btn"
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    removeAttackGroup(group.id);
-                                                }}
-                                                title="Remove group"
-                                            >
-                                                ×
-                                            </button>
-                                        </div>
+                                        <AttackGroupDisplay
+                                            key={group.id}
+                                            attackGroup={group}
+                                            active={group.id === activeGroupId}
+                                            groupSelectClick={handleGroupClick}
+                                            removeGroupClick={removeAttackGroup}
+                                            removeCounterClick={removeCounterFromGroup}
+                                        />
                                     ))}
                                     {attackGroups.length === 0 && (
                                         <div className="no-groups">No attack groups created</div>
@@ -383,19 +351,11 @@ export const AttackModal = (props: PropTypes) => {
                                 <button
                                     className="attack-modal-button create-group-btn"
                                     onClick={createAttackGroup}
-                                    disabled={selectedCrew.length === 0 || selectedMonsters.length === 0}
                                 >
                                     Create Group
                                 </button>
                                 <button className="attack-modal-button cancel-btn" onClick={handleClose}>
-                                    Cancel
-                                </button>
-                                <button
-                                    className="attack-modal-button submit-btn"
-                                    onClick={handleSubmit}
-                                    disabled={attackGroups.length === 0}
-                                >
-                                    Submit Attack
+                                    Exit
                                 </button>
                             </div>
                         </div>
@@ -409,7 +369,7 @@ export const AttackModal = (props: PropTypes) => {
                                         key={counter.id}
                                         counter={counter}
                                         selected={selectedMonsters.includes(counter.id)}
-                                        onClick={() => toggleMonsterSelection(counter.id)}
+                                        onClick={toggleMonsterSelection}
                                     />
                                 ))}
                                 {getMonsterCounters().filter(counter => !getAvailableMonsterCounters().includes(counter)).map(counter => (

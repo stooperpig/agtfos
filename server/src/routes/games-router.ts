@@ -1,11 +1,11 @@
 import express, { Request, Response } from 'express';
 import { deleteGame, deleteReplay, doesGameExist, readGame, readGameList, readGames, readReplay, readScenario, writeGames, writeReplay } from '../utils/file-utils';
-import { GameEntry, GameStatus, NewGamePlayer } from '../shared/types/game-types';
+import { GameEntry, GameStatus, NewGamePlayer, Phase } from '../shared/types/game-types';
 import { addGame, markDirty, retrieveGame } from '../cache/game-cache';
 import { pushAction } from '../utils/push-actions';
 import { createNewGame, createReplay } from '../handlers/new-game-handler';
-import { ActionHandlers, enqueue } from '../handlers/games-router-handlers';
-import { Action, ActionType, ActionUpdateMonsterPlans } from '../shared/types/action-types';
+import { ActionHandlers, enqueue, handleAttackGroup, handlePhase } from '../handlers/games-router-handlers';
+import { Action, ActionNextPhase, ActionType } from '../shared/types/action-types';
 import { ReplayType, Task } from '../types/server-types';
 import { startTask } from '../workers/async-task-queue';
 import { TaskIds } from '../tasks/tasks';
@@ -80,6 +80,106 @@ router.get('/:gameId/player/:playerId', (req: Request, res: Response) => {
         res.send({ message: 'Error: Retreiving game failed' });
     }
 })
+
+router.put('/:gameId/phase', async function (req: Request, res: Response) {
+    try {
+        const gameId = req.params.gameId as string;
+        const socketId = req.body.socketId as string;
+        const action = req.body.action as Action;
+
+        const result = await enqueue(() => {
+            return handlePhase(gameId, socketId, action);
+        });
+
+        if (result !== undefined) {
+            console.log("Action failed: " + result);
+            res.status(500);
+            res.json({ message: result });
+            return;
+        }
+
+        res.json({ message: "success" });
+    } catch (error) {
+        console.log("Action failed: " + error);
+        res.status(500);
+        res.json({ message: 'Error: Action failed' });
+    }
+});
+
+router.put('/:gameId/move', async function (req: Request, res: Response) {
+    try {
+        // const gameId = req.params.gameId as string;
+        // const socketId = req.body.socketId as string;
+        // const action = req.body.action as Action;
+
+        // const result = await enqueue(() => {
+        //     return handlePhase(gameId, socketId, action);
+        // });
+
+        // if (result !== undefined) {
+        //     console.log("Action failed: " + result);
+        //     res.status(500);
+        //     res.json({ message: result });
+        //     return;
+        // }
+
+        res.json({ message: "success" });
+    } catch (error) {
+        console.log("Action failed: " + error);
+        res.status(500);
+        res.json({ message: 'Error: Action failed' });
+    }
+});
+
+router.put('/:gameId/weapon', async function (req: Request, res: Response) {
+    try {
+        // const gameId = req.params.gameId as string;
+        // const socketId = req.body.socketId as string;
+        // const action = req.body.action as Action;
+
+        // const result = await enqueue(() => {
+        //     return handlePhase(gameId, socketId, action);
+        // });
+
+        // if (result !== undefined) {
+        //     console.log("Action failed: " + result);
+        //     res.status(500);
+        //     res.json({ message: result });
+        //     return;
+        // }
+
+        res.json({ message: "success" });
+    } catch (error) {
+        console.log("Action failed: " + error);
+        res.status(500);
+        res.json({ message: 'Error: Action failed' });
+    }
+});
+
+router.put('/:gameId/attackgroup', async function (req: Request, res: Response) {
+    try {
+        const gameId = req.params.gameId as string;
+        const socketId = req.body.socketId as string;
+        const action = req.body.action as Action;
+
+        const result = await enqueue(() => {
+            return handleAttackGroup(gameId, socketId, action);
+        });
+
+        if (result !== undefined) {
+            console.log("Action failed: " + result);
+            res.status(500);
+            res.json({ message: result });
+            return;
+        }
+
+        res.json({ message: "success" });
+    } catch (error) {
+        console.log("Action failed: " + error);
+        res.status(500);
+        res.json({ message: 'Error: Action failed' });
+    }
+});
 
 router.put('/:gameId/action', async function (req: Request, res: Response) {
     try {
@@ -202,30 +302,30 @@ router.post('/', function (req: Request, res: Response) {
         writeGames(gameList);
 
         //Run task to plan the first move for the monsters
-        const task: Task = {
-            payload: gameState,
-            type: TaskIds.PLAN_MONSTERS,
-            callBack: async (msg: any) => {
-                console.log(`createNewGame: received message from task for game: ${msg.payload.gameId} status: ${msg.status}`);
-                if (msg.status === 'done') {
-                    console.log(`createNewGame: received message from task for game: ${msg.payload.gameId} has finished`);
-                    const gameState = retrieveGame(msg.payload.gameId);
-                    const result = await enqueue(() => {
-                        return ActionHandlers[ActionType.UPDATE_MONSTER_PLANS](gameState, { type: ActionType.UPDATE_MONSTER_PLANS, payload: { actionsMap: msg.payload.actionsMap, nextCounterId: msg.payload.nextCounterId } } as ActionUpdateMonsterPlans);
-                    });
+        // const task: Task = {
+        //     payload: gameState,
+        //     type: TaskIds.PLAN_MONSTERS,
+        //     callBack: async (msg: any) => {
+        //         console.log(`createNewGame: received message from task for game: ${msg.payload.gameId} status: ${msg.status}`);
+        //         if (msg.status === 'done') {
+        //             console.log(`createNewGame: received message from task for game: ${msg.payload.gameId} has finished`);
+        //             const gameState = retrieveGame(msg.payload.gameId);
+        //             // const result = await enqueue(() => {
+        //             //     return ActionHandlers[ActionType.UPDATE_MONSTER_PLANS](gameState, { type: ActionType.UPDATE_MONSTER_PLANS, payload: { actionsMap: msg.payload.actionsMap, nextCounterId: msg.payload.nextCounterId } } as ActionUpdateMonsterPlans);
+        //             // });
 
-                    if (result !== undefined) {
-                        console.log("Action failed: " + result);
-                        return;
-                    }
+        //             // if (result !== undefined) {
+        //             //     console.log("Action failed: " + result);
+        //             //     return;
+        //             // }
 
-                    markDirty(gameId);
-                };
-            }
-        };
+        //             markDirty(gameId);
+        //         };
+        //     }
+        // };
 
-        console.log(`createNewGame: starting task for game: ${gameState.id}`);
-        startTask(task);
+        // console.log(`createNewGame: starting task for game: ${gameState.id}`);
+        // startTask(task);
 
         res.send({ message: 'Create game successful', gameId: gameState.id });
     } catch (error) {

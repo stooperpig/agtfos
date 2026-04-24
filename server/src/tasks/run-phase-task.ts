@@ -31,7 +31,7 @@ export const runPhase = (data: any, postMessage: (data: any) => void): void => {
         currentCrewAndMonsterCounters.forEach(currentCounter => {
             const startingCounter = gameState.counterMap[currentCounter.id];
             if (startingCounter) {
-                startingCounter.actions = currentCounter.actions;
+                //startingCounter.actions = currentCounter.actions;
             }
         });
 
@@ -84,7 +84,7 @@ const resetCounters = (gameState: GameState) => {
     console.log(`Resetting counters for game ${gameState.id}`);
     const counters = Object.values(gameState.counterMap);
     counters.forEach(counter => {
-        counter.actions = [];
+        //counter.actions = [];
         counter.usedMovementAllowance = 0;
     });
 }
@@ -109,110 +109,110 @@ const executeMovementPhase = (gameState: GameState): ReplayMovementElement[] => 
     });
 
     //process drop actions first
-    const countersWithDropActions = crewAndMonsterCounters.filter(counter => counter.actions.some(action => action.type === ActionType.DROP_WEAPON));
-    console.log(`Counters with drop actions: ${countersWithDropActions.length}`);
-    countersWithDropActions.forEach(counter => {
-        console.log(`Counter ${counter.id} has drop action`)
-        const action = counter.actions.find(action => action.type === ActionType.DROP_WEAPON);
-        console.log(`Drop action: ${JSON.stringify(action)}`)
-        if (action) {
-            const dropAction = action as ActionDropWeapon;
-            processDropWeapon(gameState, dropAction);
-            const replayMovementElement: ReplayMovementElement = {
-                type: ActionType.DROP_WEAPON,
-                counterId: dropAction.payload.crewCounterId,
-                fromAreaId: dropAction.payload.fromAreaId,
-                fromCoord: dropAction.payload.fromCoord,
-                weaponCounterId: dropAction.payload.weaponCounterId,
-                movementCost: dropAction.payload.movementCost,
-                engagedData: {},
-                spottedData: {}
-            };
-            replayMovementElements.push(replayMovementElement);
-        }
-    });
+    // const countersWithDropActions = crewAndMonsterCounters.filter(counter => counter.actions.some(action => action.type === ActionType.DROP_WEAPON));
+    // console.log(`Counters with drop actions: ${countersWithDropActions.length}`);
+    // countersWithDropActions.forEach(counter => {
+    //     console.log(`Counter ${counter.id} has drop action`)
+    //     const action = counter.actions.find(action => action.type === ActionType.DROP_WEAPON);
+    //     console.log(`Drop action: ${JSON.stringify(action)}`)
+    //     if (action) {
+    //         const dropAction = action as ActionDropWeapon;
+    //         processDropWeapon(gameState, dropAction);
+    //         const replayMovementElement: ReplayMovementElement = {
+    //             type: ActionType.DROP_WEAPON,
+    //             counterId: dropAction.payload.crewCounterId,
+    //             fromAreaId: dropAction.payload.fromAreaId,
+    //             fromCoord: dropAction.payload.fromCoord,
+    //             weaponCounterId: dropAction.payload.weaponCounterId,
+    //             movementCost: dropAction.payload.movementCost,
+    //             engagedData: {},
+    //             spottedData: {}
+    //         };
+    //         replayMovementElements.push(replayMovementElement);
+    //     }
+    // });
 
     //process grab actions second
-    const countersWithGrabActions = crewAndMonsterCounters.filter(counter => counter.actions.some(action => action.type === ActionType.GRAB_WEAPON));
-    console.log(`Counters with grab actions: ${countersWithGrabActions.length}`);
-    countersWithGrabActions.forEach(counter => {
-        console.log(`Counter ${counter.id} has grab action`)
-        const action = counter.actions.find(action => action.type === ActionType.GRAB_WEAPON);
-        console.log(`Grab action: ${JSON.stringify(action)}`)
-        if (action) {
-            const grabAction = action as ActionGrabWeapon;
-            processGrabWeapon(gameState, grabAction);
-            const replayMovementElement: ReplayMovementElement = {
-                type: ActionType.GRAB_WEAPON,
-                counterId: grabAction.payload.crewCounterId,
-                fromAreaId: grabAction.payload.fromAreaId,
-                fromCoord: grabAction.payload.fromCoord,
-                weaponCounterId: grabAction.payload.weaponCounterId,
-                movementCost: grabAction.payload.movementCost,
-                engagedData: {},
-                spottedData: {}
-            };
-            replayMovementElements.push(replayMovementElement);
-        }
-    });
+    // const countersWithGrabActions = crewAndMonsterCounters.filter(counter => counter.actions.some(action => action.type === ActionType.GRAB_WEAPON));
+    // console.log(`Counters with grab actions: ${countersWithGrabActions.length}`);
+    // countersWithGrabActions.forEach(counter => {
+    //     console.log(`Counter ${counter.id} has grab action`)
+    //     const action = counter.actions.find(action => action.type === ActionType.GRAB_WEAPON);
+    //     console.log(`Grab action: ${JSON.stringify(action)}`)
+    //     if (action) {
+    //         const grabAction = action as ActionGrabWeapon;
+    //         processGrabWeapon(gameState, grabAction);
+    //         const replayMovementElement: ReplayMovementElement = {
+    //             type: ActionType.GRAB_WEAPON,
+    //             counterId: grabAction.payload.crewCounterId,
+    //             fromAreaId: grabAction.payload.fromAreaId,
+    //             fromCoord: grabAction.payload.fromCoord,
+    //             weaponCounterId: grabAction.payload.weaponCounterId,
+    //             movementCost: grabAction.payload.movementCost,
+    //             engagedData: {},
+    //             spottedData: {}
+    //         };
+    //         replayMovementElements.push(replayMovementElement);
+    //     }
+    // });
 
     //process lay egg actions third
-    const countersWithLayEggActions = crewAndMonsterCounters.filter(counter => counter.actions.some(action => action.type === ActionType.LAY_EGG));
-    console.log(`Counters with lay egg actions: ${countersWithLayEggActions.length}`);
-    countersWithLayEggActions.forEach(counter => {
-        console.log(`Counter ${counter.id} has lay egg action`)
-        const action = counter.actions.find(action => action.type === ActionType.LAY_EGG);
-        console.log(`Lay egg action: ${JSON.stringify(action)}`)
-        if (action) {
-            const layEggAction = action as ActionLayEgg;
-            processLayEgg(gameState, layEggAction);
-            const replayMovementElement: ReplayMovementElement = {
-                type: ActionType.LAY_EGG,
-                counterId: layEggAction.payload.counterId,
-                fromAreaId: layEggAction.payload.fromAreaId,
-                fromCoord: layEggAction.payload.fromCoord,
-                weaponCounterId: undefined,
-                movementCost: 0,
-                engagedData: {},
-                spottedData: {},
-                newCounterId: layEggAction.payload.newCounterId,
-                movementAllowance: layEggAction.payload.movementAllowance,
-                attackDice: layEggAction.payload.attackDice,
-                constitution: layEggAction.payload.constitution,
-                imageName: layEggAction.payload.imageName
-            };
-            replayMovementElements.push(replayMovementElement);
-        }
-    });
+    // const countersWithLayEggActions = crewAndMonsterCounters.filter(counter => counter.actions.some(action => action.type === ActionType.LAY_EGG));
+    // console.log(`Counters with lay egg actions: ${countersWithLayEggActions.length}`);
+    // countersWithLayEggActions.forEach(counter => {
+    //     console.log(`Counter ${counter.id} has lay egg action`)
+    //     const action = counter.actions.find(action => action.type === ActionType.LAY_EGG);
+    //     console.log(`Lay egg action: ${JSON.stringify(action)}`)
+    //     if (action) {
+    //         const layEggAction = action as ActionLayEgg;
+    //         processLayEgg(gameState, layEggAction);
+    //         const replayMovementElement: ReplayMovementElement = {
+    //             type: ActionType.LAY_EGG,
+    //             counterId: layEggAction.payload.counterId,
+    //             fromAreaId: layEggAction.payload.fromAreaId,
+    //             fromCoord: layEggAction.payload.fromCoord,
+    //             weaponCounterId: undefined,
+    //             movementCost: 0,
+    //             engagedData: {},
+    //             spottedData: {},
+    //             newCounterId: layEggAction.payload.newCounterId,
+    //             movementAllowance: layEggAction.payload.movementAllowance,
+    //             attackDice: layEggAction.payload.attackDice,
+    //             constitution: layEggAction.payload.constitution,
+    //             imageName: layEggAction.payload.imageName
+    //         };
+    //         replayMovementElements.push(replayMovementElement);
+    //     }
+    // });
 
     //process grow monster actions fourth
-    const countersWithGrowMonsterActions = crewAndMonsterCounters.filter(counter => counter.actions.some(action => action.type === ActionType.GROW_MONSTER));
-    console.log(`Counters with grow monster actions: ${countersWithGrowMonsterActions.length}`);
-    countersWithGrowMonsterActions.forEach(counter => {
-        console.log(`Counter ${counter.id} has grow monster action`)
-        const action = counter.actions.find(action => action.type === ActionType.GROW_MONSTER);
-        console.log(`Grow monster action: ${JSON.stringify(action)}`)
-        if (action) {
-            const growMonsterAction = action as ActionGrowMonster;
-            processGrowMonster(gameState, growMonsterAction);
-            const replayMovementElement: ReplayMovementElement = {
-                type: ActionType.GROW_MONSTER,
-                counterId: growMonsterAction.payload.counterId,
-                fromAreaId: growMonsterAction.payload.fromAreaId,
-                fromCoord: growMonsterAction.payload.fromCoord,
-                weaponCounterId: undefined,
-                movementCost: 0,
-                engagedData: {},
-                spottedData: {},
-                nextType: growMonsterAction.payload.nextType,
-                movementAllowance: growMonsterAction.payload.movementAllowance,
-                attackDice: growMonsterAction.payload.attackDice,
-                constitution: growMonsterAction.payload.constitution,
-                imageName: growMonsterAction.payload.imageName
-            };
-            replayMovementElements.push(replayMovementElement);
-        }
-    });
+    // const countersWithGrowMonsterActions = crewAndMonsterCounters.filter(counter => counter.actions.some(action => action.type === ActionType.GROW_MONSTER));
+    // console.log(`Counters with grow monster actions: ${countersWithGrowMonsterActions.length}`);
+    // countersWithGrowMonsterActions.forEach(counter => {
+    //     console.log(`Counter ${counter.id} has grow monster action`)
+    //     const action = counter.actions.find(action => action.type === ActionType.GROW_MONSTER);
+    //     console.log(`Grow monster action: ${JSON.stringify(action)}`)
+    //     if (action) {
+    //         const growMonsterAction = action as ActionGrowMonster;
+    //         processGrowMonster(gameState, growMonsterAction);
+    //         const replayMovementElement: ReplayMovementElement = {
+    //             type: ActionType.GROW_MONSTER,
+    //             counterId: growMonsterAction.payload.counterId,
+    //             fromAreaId: growMonsterAction.payload.fromAreaId,
+    //             fromCoord: growMonsterAction.payload.fromCoord,
+    //             weaponCounterId: undefined,
+    //             movementCost: 0,
+    //             engagedData: {},
+    //             spottedData: {},
+    //             nextType: growMonsterAction.payload.nextType,
+    //             movementAllowance: growMonsterAction.payload.movementAllowance,
+    //             attackDice: growMonsterAction.payload.attackDice,
+    //             constitution: growMonsterAction.payload.constitution,
+    //             imageName: growMonsterAction.payload.imageName
+    //         };
+    //         replayMovementElements.push(replayMovementElement);
+    //     }
+    // });
 
     //process all actions but will basically ignore the drops/grabs since they have already been processed
     let processedAction = true;
@@ -221,62 +221,62 @@ const executeMovementPhase = (gameState: GameState): ReplayMovementElement[] => 
     while (processedAction && count < 10) {
         ++count;
         processedAction = false;
-        console.log(`Processing action index ${index}`);
-        for (let i = 0; i < crewAndMonsterCounters.length; i++) {
-            const counter = crewAndMonsterCounters[i];
-            if (!counter.engaged && counter.actions && counter.actions.length > index) {
-                console.log(`Counter ${counter.id} has ${counter.actions.length} actions`);
-                processedAction = true;
-                const action = counter.actions[index];
-                console.log(`processing action ${index} for counter ${counter.id}`);
-                if (action.type === ActionType.MOVE_TO_COORD) {
-                    const moveToAction = action as ActionMoveToCoord;
-                    processMoveToCoord(gameState, moveToAction);
-                    const index = moveToAction.payload.counterIds.indexOf(counter.id);
-                    const replayMovementElement: ReplayMovementElement = {
-                        type: ActionType.MOVE_TO_COORD,
-                        counterId: counter.id,
-                        fromAreaId: moveToAction.payload.fromAreaId,
-                        fromCoord: moveToAction.payload.fromCoords[index],
-                        toAreaId: moveToAction.payload.toAreaId,
-                        toCoord: moveToAction.payload.toCoord,
-                        weaponCounterId: undefined,
-                        engagedData: {},    
-                        spottedData: {},
-                        movementCost: moveToAction.payload.movementCost
-                    };
-                    replayMovementElements.push(replayMovementElement);
+        // console.log(`Processing action index ${index}`);
+        // for (let i = 0; i < crewAndMonsterCounters.length; i++) {
+        //     const counter = crewAndMonsterCounters[i];
+        //     if (!counter.engaged && counter.actions && counter.actions.length > index) {
+        //         console.log(`Counter ${counter.id} has ${counter.actions.length} actions`);
+        //         processedAction = true;
+        //         const action = counter.actions[index];
+        //         console.log(`processing action ${index} for counter ${counter.id}`);
+        //         if (action.type === ActionType.MOVE_TO_COORD) {
+        //             const moveToAction = action as ActionMoveToCoord;
+        //             processMoveToCoord(gameState, moveToAction);
+        //             const index = moveToAction.payload.counterIds.indexOf(counter.id);
+        //             const replayMovementElement: ReplayMovementElement = {
+        //                 type: ActionType.MOVE_TO_COORD,
+        //                 counterId: counter.id,
+        //                 fromAreaId: moveToAction.payload.fromAreaId,
+        //                 fromCoord: moveToAction.payload.fromCoords[index],
+        //                 toAreaId: moveToAction.payload.toAreaId,
+        //                 toCoord: moveToAction.payload.toCoord,
+        //                 weaponCounterId: undefined,
+        //                 engagedData: {},    
+        //                 spottedData: {},
+        //                 movementCost: moveToAction.payload.movementCost
+        //             };
+        //             replayMovementElements.push(replayMovementElement);
 
-                    const engagedCounterIds = checkEngagement(gameState.counterMap[counter.id].areaId, counter.type, gameState.counterMap, gameState.stackMap);
-                    console.log(`Engaged counters: ${engagedCounterIds.length}`);
-                    if (engagedCounterIds.length > 0) {
-                        engagedCounterIds.push(counter.id);
+        //             const engagedCounterIds = checkEngagement(gameState.counterMap[counter.id].areaId, counter.type, gameState.counterMap, gameState.stackMap);
+        //             console.log(`Engaged counters: ${engagedCounterIds.length}`);
+        //             if (engagedCounterIds.length > 0) {
+        //                 engagedCounterIds.push(counter.id);
 
-                        replayMovementElement.engagedData =
-                            engagedCounterIds.reduce((acc: { [key: string]: boolean }, key: string) => {
-                                acc[key] = true;
-                                return acc;
-                            }, {} as { [key: string]: boolean });
+        //                 replayMovementElement.engagedData =
+        //                     engagedCounterIds.reduce((acc: { [key: string]: boolean }, key: string) => {
+        //                         acc[key] = true;
+        //                         return acc;
+        //                     }, {} as { [key: string]: boolean });
 
-                        engagedCounterIds.forEach(engagedCounterId => {
-                            console.log(`Engaged counter: ${engagedCounterId}`);
-                            const activeCounter = gameState.counterMap[engagedCounterId];
-                            activeCounter.engaged = true;
+        //                 engagedCounterIds.forEach(engagedCounterId => {
+        //                     console.log(`Engaged counter: ${engagedCounterId}`);
+        //                     const activeCounter = gameState.counterMap[engagedCounterId];
+        //                     activeCounter.engaged = true;
 
-                            // const planningCounter = currentCrewAndMonsterCounters.find(counter => counter.id === engagedCounterId);
-                            // if (planningCounter && planningCounter.actions && planningCounter.actions.length - 1 > index) {
-                            //     planningCounter.actions.splice(index + 1);
-                            // }
-                        });
-                    }
-                }
-            }
-        }
+        //                     // const planningCounter = currentCrewAndMonsterCounters.find(counter => counter.id === engagedCounterId);
+        //                     // if (planningCounter && planningCounter.actions && planningCounter.actions.length - 1 > index) {
+        //                     //     planningCounter.actions.splice(index + 1);
+        //                     // }
+        //                 });
+        //             }
+        //         }
+        //     }
+        // }
 
-        if (processedAction) {
-            shuffleArray(crewAndMonsterCounters);
-            index++;
-        }
+        // if (processedAction) {
+        //     shuffleArray(crewAndMonsterCounters);
+        //     index++;
+        // }
     }
     return replayMovementElements;
 }

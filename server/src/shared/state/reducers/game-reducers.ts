@@ -1,83 +1,46 @@
-import { Counter, CounterType, GameState, PlayerTurnStatus } from "../../../shared/types/game-types";
-import { Action, ActionAddAction, ActionClearPlan, ActionDeselectCounter, ActionDropWeapon, ActionGrabWeapon, ActionGrowMonster, ActionLayEgg, ActionMoveToCoord, ActionPhaseComplete, ActionRefreshGame, ActionSelectArea, ActionSelectCounter, ActionSetStatusMessage, ActionType, ActionUpdateConnectedClientCount, ActionUpdateCrewAttackPlans, ActionUpdateMonsterPlans } from "../../types/action-types";
+import { AttackGroup, Counter, CounterType, GameState, Phase, PlayerTurnStatus } from "../../../shared/types/game-types";
+import {
+    Action, ActionAddCounterToAttackGroup, ActionCreateAttackGroup, ActionDeleteAttackGroup, ActionDeselectCounter, ActionDropWeapon, ActionGrabWeapon, ActionGrowMonster, ActionLayEgg, ActionMoveToCoord, ActionNextPhase, ActionPhaseComplete, ActionRefreshGame, ActionRemoveCounterFromAttackGroup, ActionSelectArea, ActionSelectCounter,
+    ActionSetStatusMessage, ActionType, ActionUpdateConnectedClientCount
+} from "../../types/action-types";
+import { isCrew } from "../../utils/counter-utils";
+import { randomUUID } from 'crypto';
 
-export const processClearPlan = (state: GameState, action: ActionClearPlan): void => {
-    const counterIds = action.payload.counterIds;
-    const counters = counterIds.map(counterId => state.counterMap[counterId]);
+export const processCreateAttackGroup = (state: GameState, action: ActionCreateAttackGroup): void => {
+    const { areaId, attackGroupId } = action.payload;
+    const attackGroup: AttackGroup = {
+        id: attackGroupId,
+        areaId,
+        targetCounterIds: [],
+        attackingCounterIds: [] 
+    };
 
-    const areaIdSet = new Set<string>();
-    counters.forEach((counter, index) => {
-        console.log(`clearing plan for ${counter.id}. ${counter.actions ? `has ${counter.actions.length} actions` : 'no actions'}`);
-        if (counter.actions && counter.actions.length > 0) {
-            const action = counter.actions[0];
-            console.log(`first action is ${action.type}`);
-            if (action.type === ActionType.DROP_WEAPON) {
-                const dropAction = action as ActionGrabWeapon;
-                state.stackMap[counter.areaId!].counterIds = state.stackMap[counter.areaId!].counterIds.filter(counterId => counterId !== counter.id);
-                state.stackMap[dropAction.payload.fromAreaId].counterIds.push(counter.id);
-                counter.areaId = dropAction.payload.fromAreaId;
-                counter.coord = dropAction.payload.fromCoord;
-                areaIdSet.add(dropAction.payload.fromAreaId);
+    state.attackGroups.push(attackGroup);
+}
 
-                if (counter.actions.length > 1 && counter.actions[1].type === ActionType.GRAB_WEAPON) {
-                    const secondAction = counter.actions[1] as ActionGrabWeapon;
-                    console.log(`second action is ${secondAction.type}`);
-                    console.log(`adding weapon back to stack`);
-                    const weaponCounter = state.counterMap[counter.weaponCounterId!];
-                    counter.weaponCounterId = undefined;
-                    weaponCounter.ownerCounterId = undefined;
-                    weaponCounter.areaId = secondAction.payload.fromAreaId;
-                    weaponCounter.coord = secondAction.payload.fromCoord;
-                    weaponCounter.actions = weaponCounter.actions?.filter(a => a.type !== ActionType.GRAB_WEAPON) || [];
-                    state.stackMap[secondAction.payload.fromAreaId].counterIds.push(weaponCounter.id);
-                }
+export const processDeleteAttackGroup = (state: GameState, action: ActionDeleteAttackGroup): void => {
+    const { attackGroupId } = action.payload;
+    state.attackGroups = state.attackGroups.filter(group => group.id !== attackGroupId);
+}
 
-                const weaponCounter = state.counterMap[dropAction.payload.weaponCounterId];
-                if (weaponCounter.ownerCounterId === undefined) {
-                    state.stackMap[dropAction.payload.fromAreaId].counterIds = state.stackMap[dropAction.payload.fromAreaId].counterIds.filter(counterId => counterId !== dropAction.payload.weaponCounterId);
-                    counter.weaponCounterId = dropAction.payload.weaponCounterId;
-                    weaponCounter.ownerCounterId = counter.id;
-                    counter.actions = [];
-                    weaponCounter.actions = [];
-                } else {
-                    counter.actions = counter.actions.slice(1);
-                }
-            } else if (action.type === ActionType.GRAB_WEAPON) {
-                const grabAction = action as ActionGrabWeapon;
-                state.stackMap[counter.areaId!].counterIds = state.stackMap[counter.areaId!].counterIds.filter(counterId => counterId !== counter.id);
-                state.stackMap[grabAction.payload.fromAreaId].counterIds.push(counter.id);
-                counter.areaId = grabAction.payload.fromAreaId;
-                counter.coord = grabAction.payload.fromCoord;
-                areaIdSet.add(grabAction.payload.fromAreaId);
-                counter.actions = [];
-                console.log(`adding weapon back to stack`);
-                const weaponCounter = state.counterMap[counter.weaponCounterId!];
-                counter.weaponCounterId = undefined;
-                weaponCounter.ownerCounterId = undefined;
-                weaponCounter.areaId = grabAction.payload.fromAreaId;
-                weaponCounter.coord = grabAction.payload.fromCoord;
-                weaponCounter.actions = weaponCounter.actions?.filter(a => a.type !== ActionType.GRAB_WEAPON) || [];
-                state.stackMap[grabAction.payload.fromAreaId].counterIds.push(weaponCounter.id);
-                console.log(`counter ${counter.id} actions: ${counter.actions.length}`);
-            } else if (action.type === ActionType.MOVE_TO_COORD) {
-                const moveAction = action as ActionMoveToCoord;
-                state.stackMap[counter.areaId!].counterIds = state.stackMap[counter.areaId!].counterIds.filter(counterId => counterId !== counter.id);
-                state.stackMap[moveAction.payload.fromAreaId!].counterIds.push(counter.id);
-                counter.areaId = moveAction.payload.fromAreaId;
-                counter.coord = moveAction.payload.fromCoords[index];
-                areaIdSet.add(moveAction.payload.fromAreaId);
-                counter.actions = [];
-                console.log(`counter ${counter.id} actions: ${counter.actions.length}`);
-            }
-        } else {
-            counter.actions = [];
+export const processRemoveCounterFromAttackGroup = (state: GameState, action: ActionRemoveCounterFromAttackGroup): void => {
+    const { attackGroupId, counterId } = action.payload;
+    const attackGroup = state.attackGroups.find(group => group.id === attackGroupId);
+    if (attackGroup) {
+        attackGroup.targetCounterIds = attackGroup.targetCounterIds.filter(id => id !== counterId);
+        attackGroup.attackingCounterIds = attackGroup.attackingCounterIds.filter(id => id !== counterId);
+    }
+}
+
+export const processAddCounterToAttackGroup = (state: GameState, action: ActionAddCounterToAttackGroup): void => {
+    const { attackGroupId, targetCounterId, attackingCounterId } = action.payload;
+    const attackGroup = state.attackGroups.find(group => group.id === attackGroupId);
+    if (attackGroup) {
+        if (targetCounterId) {
+            attackGroup.targetCounterIds.push(targetCounterId);
+        } else if (attackingCounterId) {
+            attackGroup.attackingCounterIds.push(attackingCounterId);
         }
-
-        counter.usedMovementAllowance = 0;
-    });
-
-    if (areaIdSet.size > 1) {
-        state.selectedCounterIds = [];
     }
 }
 
@@ -97,7 +60,7 @@ export const processDropWeapon = (state: GameState, action: ActionDropWeapon): v
     const stack = state.stackMap[crewCounter.areaId!];
     stack.counterIds.push(weaponCounter.id);
 
-    crewCounter.actions.push(action);
+    //crewCounter.actions.push(action);
     //weaponCounter.actions.push(action);
     //crewCounter.actions.push({ type: CounterActionType.GRAB_WEAPON, fromAreaId: crewCounter.areaId!, fromCoord: crewCounter.coord!, weaponCounterId: weaponCounter.id, movementCost: 0 });
 }
@@ -120,48 +83,48 @@ export const processGrabWeapon = (state: GameState, action: ActionGrabWeapon): v
     //crewCounter.actions.push({ type: CounterActionType.GRAB_WEAPON, fromAreaId: crewCounter.areaId!, fromCoord: crewCounter.coord!, weaponCounterId: weaponCounterId, movementCost: 0 });
 }
 
-export const processAddAction = (state: GameState, action: ActionAddAction): void => {
-    const { counterIds, actionToAdd } = action.payload;
+// export const processAddAction = (state: GameState, action: ActionAddAction): void => {
+//     const { counterIds, actionToAdd } = action.payload;
 
-    const counters = counterIds.map(counterId => state.counterMap[counterId]);
+//     const counters = counterIds.map(counterId => state.counterMap[counterId]);
 
-    counters.forEach((counter, index) => {
-        switch (actionToAdd.type) {
-            case ActionType.MOVE_TO_COORD: {
-                const moveToCoordAction = actionToAdd as ActionMoveToCoord;
-                const singleCounterAction: ActionMoveToCoord = {
-                    type: ActionType.MOVE_TO_COORD,
-                    payload: {
-                        counterIds: [counter.id],
-                        fromAreaId: moveToCoordAction.payload.fromAreaId,
-                        fromCoords: [moveToCoordAction.payload.fromCoords[index]],
-                        toAreaId: moveToCoordAction.payload.toAreaId,
-                        toCoord: moveToCoordAction.payload.toCoord,
-                        movementCost: moveToCoordAction.payload.movementCost
-                    }
-                };
-                counter.actions.push(singleCounterAction);
-                break;
-            }
-            case ActionType.GRAB_WEAPON: {
-                counter.actions.push(actionToAdd);
-                break;
-            }
-            case ActionType.DROP_WEAPON: {
-                counter.actions.push(actionToAdd);
-                break;
-            }
-            case ActionType.GROW_MONSTER: {
-                counter.actions.push(actionToAdd);
-                break;
-            }
-            case ActionType.LAY_EGG: {
-                counter.actions.push(actionToAdd);
-                break;
-            }
-        }
-    });
-}
+//     counters.forEach((counter, index) => {
+//         switch (actionToAdd.type) {
+//             case ActionType.MOVE_TO_COORD: {
+//                 const moveToCoordAction = actionToAdd as ActionMoveToCoord;
+//                 const singleCounterAction: ActionMoveToCoord = {
+//                     type: ActionType.MOVE_TO_COORD,
+//                     payload: {
+//                         counterIds: [counter.id],
+//                         fromAreaId: moveToCoordAction.payload.fromAreaId,
+//                         fromCoords: [moveToCoordAction.payload.fromCoords[index]],
+//                         toAreaId: moveToCoordAction.payload.toAreaId,
+//                         toCoord: moveToCoordAction.payload.toCoord,
+//                         movementCost: moveToCoordAction.payload.movementCost
+//                     }
+//                 };
+//                 counter.actions.push(singleCounterAction);
+//                 break;
+//             }
+//             case ActionType.GRAB_WEAPON: {
+//                 counter.actions.push(actionToAdd);
+//                 break;
+//             }
+//             case ActionType.DROP_WEAPON: {
+//                 counter.actions.push(actionToAdd);
+//                 break;
+//             }
+//             case ActionType.GROW_MONSTER: {
+//                 //counter.actions.push(actionToAdd);
+//                 break;
+//             }
+//             case ActionType.LAY_EGG: {
+//                 //counter.actions.push(actionToAdd);
+//                 break;
+//             }
+//         }
+//     });
+// }
 
 export const processGrowMonster = (state: GameState, action: ActionGrowMonster): void => {
     const { counterId, nextType, movementAllowance, attackDice, constitution, imageName } = action.payload;
@@ -191,7 +154,7 @@ export const processLayEgg = (state: GameState, action: ActionLayEgg): void => {
         constitution: constitution,
         imageName: imageName,
         usedMovementAllowance: 0,
-        actions: [],
+        ///actions: [],
         engaged: false,
         spotted: false,
         moved: false,
@@ -207,11 +170,7 @@ export const processLayEgg = (state: GameState, action: ActionLayEgg): void => {
 }
 
 export const processMoveToCoord = (state: GameState, action: ActionMoveToCoord): void => {
-    const { counterIds, fromAreaId, fromCoords, toAreaId, toCoord, movementCost } = action.payload;
-
-    if (toCoord === undefined || counterIds === undefined || counterIds.length === 0) {
-        return;
-    }
+    const { counterIds, fromAreaId, fromCoords, toAreaId, toCoord, movementCost, engaged } = action.payload;
 
     if (fromAreaId !== toAreaId) {
         const fromStack = state.stackMap[fromAreaId];
@@ -232,25 +191,37 @@ export const processMoveToCoord = (state: GameState, action: ActionMoveToCoord):
         }
     }
 
-    const counters = counterIds.map(counterId => state.counterMap[counterId]);
-
-    counters.forEach(counter => {
+    counterIds.forEach(counterId => {
+        const counter = state.counterMap[counterId];
         counter.coord = toCoord;
         if (fromAreaId !== toAreaId) {
             counter.usedMovementAllowance += movementCost;
             counter.areaId = toAreaId;
+            counter.engaged = engaged;
         }
     });
 }
 
 export const processPhaseComplete = (state: GameState, action: ActionPhaseComplete): void => {
     const { playerId } = action.payload;
-    if (playerId === state.currentPlayerId) {
-        const player = state.players.find(player => player.id === playerId);
-        if (player) {
-            player.turnStatus = PlayerTurnStatus.FINISHED;
-        }
+    const player = state.players.find(player => player.id === playerId);
+    if (player) {
+        player.turnStatus = PlayerTurnStatus.FINISHED;
     }
+}
+
+export const processNextPhase = (state: GameState, action: ActionNextPhase): void => {
+    const { phase } = action.payload;
+
+    if (phase === Phase.GRAB_WEAPON) {
+        state.turn += 1;
+    }
+
+    state.phase = phase;
+
+    state.players.forEach(player => {
+        player.turnStatus = PlayerTurnStatus.STARTED;
+    });
 }
 
 export const processRefreshGame = (state: GameState, action: ActionRefreshGame): void => {
@@ -284,21 +255,21 @@ export const processSelectCounter = (state: GameState, action: ActionSelectCount
     }
 }
 
-export const processUpdateCrewAttackPlans = (state: GameState, action: ActionUpdateCrewAttackPlans): void => {
-    const { actions } = action.payload;
-    //state.crewAttackPlans = actions;
-}
+// export const processUpdateCrewAttackPlans = (state: GameState, action: ActionUpdateCrewAttackPlans): void => {
+//     const { actions } = action.payload;
+//     //state.crewAttackPlans = actions;
+// }
 
-export const processUpdateMonsterPlans = (state: GameState, action: ActionUpdateMonsterPlans): void => {
-    const { actionsMap, nextCounterId } = action.payload;
-    Object.entries(actionsMap).forEach(([monsterId, actions]) => {
-        const monster = state.counterMap[monsterId];
-        if (monster) {
-            monster.actions = actions as Action[];
-        }
-    });
-    state.nextCounterId = parseInt(nextCounterId);
-}
+// export const processUpdateMonsterPlans = (state: GameState, action: ActionUpdateMonsterPlans): void => {
+//     const { actionsMap, nextCounterId } = action.payload;
+//     Object.entries(actionsMap).forEach(([monsterId, actions]) => {
+//         const monster = state.counterMap[monsterId];
+//         if (monster) {
+//             monster.actions = actions as Action[];
+//         }
+//     });
+//     state.nextCounterId = parseInt(nextCounterId);
+// }
 
 export const processUpdateClientCount = (state: GameState, action: ActionUpdateConnectedClientCount): void => {
     const count = action.payload;

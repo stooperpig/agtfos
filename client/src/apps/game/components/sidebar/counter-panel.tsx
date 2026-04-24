@@ -11,7 +11,7 @@ interface PropTypes {
 
 export const CounterPanel = (props: PropTypes) => {
     const counterMap = useAppSelector((state: RootState) => (state.replay && state.replay.show && state.replay.activeState ? state.replay.activeState.counterMap : state.counterMap));
-
+    const players = useAppSelector((state: RootState) => state.players);
     const counter = counterMap[props.counterId];
 
     const imageUrl = `/images/${counter.imageName}.png`;
@@ -24,6 +24,15 @@ export const CounterPanel = (props: PropTypes) => {
         if (props.onClick !== undefined) {
             props.onClick(props.counterId);
         }
+    }
+
+    const renderPlayer = () => {
+        const player = players.find(p => p.id === counter.playerId);
+        if (!player) {
+            return null;
+        }
+
+        return <div className="counter-panel-player-name">({player.name})</div>;
     }
 
     const renderDataPanel = () => {
@@ -41,10 +50,12 @@ export const CounterPanel = (props: PropTypes) => {
             );
         }
 
+        const player = players.find(p => p.id === counter.playerId);
         return (
             <div className="counter-panel-data">
                 Mv: {counter.movementAllowance - counter.usedMovementAllowance}/{counter.movementAllowance}<br />
                 <span className={counter.engaged ? 'counter-panel-engaged' : ''}>{counter.engaged ? 'Engaged' : ''}</span>
+                {renderPlayer()}
                 {renderWeapon()}
             </div>
         )

@@ -7,7 +7,8 @@ import { getMovementCost, pointInPolygon } from '../../utils/map-utils';
 import { sortCounterIdsBySelected, validateMove } from './utils';
 import { sendMessage, socketId } from '../../../../api/web-socket';
 import { putData } from '../../../../api/api-utils';
-import { ActionAddAction, ActionMoveToCoord, ActionType } from '../../../../shared/types/action-types';
+import { ActionMoveToCoord, ActionType } from '../../../../shared/types/action-types';
+import { checkEngagement } from '../../../../shared/utils/movement-utils';
 
 const updateCanvas = (canvas: HTMLCanvasElement, scale: number, currentAreaId: string | undefined, stackMap: StackMap, counterMap: CounterMap,
     areaDefinitionMap: AreaDefinitionMap, selectedCounterIds: string[], animation?: Animation) => {
@@ -106,30 +107,8 @@ const renderStack = (context: any, scale: number, counters: CounterMap, stack: S
             // TODO: render animation
             return;
         }
-        
+
         renderCounter(context, scale, counter, counter.coord!, index, selectedCounterIds && selectedCounterIds.includes(counterId));
-
-        // const imageData = ImageData[counter.imageName];
-        // if (imageData === undefined) {
-        //     console.log('image data not found for counter ' + counter.imageName);
-        //     return;
-        // }
-
-        // let counterImage = ImageData[counter.imageName].image;
-        // if (counterImage && index < 10) {
-        //     const counterWidth = counterImage.naturalWidth * scale * 0.9;
-        //     const counterHeight = counterImage.naturalHeight * scale * 0.9;
-        //     const x = counter.coord!.x * scale - (counterWidth / 2);
-        //     const y = counter.coord!.y * scale - (counterHeight / 2);
-        //     context.drawImage(counterImage, x - (index * 3), y - (index * 3), counterWidth, counterHeight);
-        //     if (selectedCounterIds && selectedCounterIds.includes(counterId)) {
-        //         context.strokeStyle = `rgb(255, 0, 0)`;
-        //         context.beginPath();
-        //         context.rect(x - (index * 3), y - (index * 3), counterWidth + 1, counterHeight + 1);
-        //         context.stroke();
-        //         context.closePath();
-        //     }
-        // }
     });
 }
 
@@ -196,7 +175,7 @@ const animateCounter = (canvas: HTMLCanvasElement, scale: number, aninmationRef:
                 }
 
                 console.log(`drawCounter(context, counter, ${x}, ${y}) stillAnimating: ${stillAnimating}`);
-                renderCounter(context, scale, counter, {x, y}, 0, true);
+                renderCounter(context, scale, counter, { x, y }, 0, true);
             }
         });
 
@@ -247,16 +226,18 @@ const Map = () => {
     }, [animation, animationCanvasRef]);
 
     React.useEffect(() => {
+        console.log('map useEffect');
         if (mainCanvasRef.current) {
             const canvas: HTMLCanvasElement = mainCanvasRef.current;
             if (replay && replay.show && replay.activeState) {
                 updateCanvas(canvas, mapScale, currentAreaId, replay.activeState.stackMap, replay.activeState.counterMap, areaDefinitionMap, selectedCounterIds, replay.activeState.animation);
                 return;
-            } else {
+            } else {        
+                console.log('map useEffect - normal');
                 updateCanvas(canvas, mapScale, currentAreaId, stackMap, counterMap, areaDefinitionMap, selectedCounterIds);
             }
         }
-    }, [mainCanvasRef, currentAreaId, mapScale, stackMap, areaDefinitionMap, selectedCounterIds, replay]);
+    }, [mainCanvasRef, counterMap, currentAreaId, mapScale, stackMap, areaDefinitionMap, selectedCounterIds, replay]);
 
     function startLoop(canvas: HTMLCanvasElement) {
         console.log('startLoop');
@@ -307,14 +288,27 @@ const Map = () => {
             return counter.coord!
         });
 
+        const firstCounter = counterMap[selectedCounterIds[0]];
+        const engaged = (currentAreaId !== newArea!.id) ? checkEngagement(stackMap[newArea!.id], firstCounter.type, counterMap) : false;
         const movementCost = getMovementCost(currentAreaId!, newArea!.id);
-        const moveToAction: ActionMoveToCoord = { type: ActionType.MOVE_TO_COORD, payload: { counterIds: [...selectedCounterIds], fromAreaId: currentAreaId!, fromCoords: fromCoords, toAreaId: newArea!.id, toCoord: { x: posX / scale, y: posY / scale }, movementCost } };
+        const moveToAction: ActionMoveToCoord = {
+            type: ActionType.MOVE_TO_COORD,
+            payload: {
+                counterIds: [...selectedCounterIds],
+                fromAreaId: currentAreaId!,
+                fromCoords: fromCoords,
+                toAreaId: newArea!.id,
+                toCoord: { x: posX / scale, y: posY / scale },
+                movementCost,
+                engaged: engaged
+            }
+        };
         console.log(JSON.stringify(moveToAction));
         putData(`api/games/${gameId}/action`, { socketId, action: moveToAction }).then((resp) => {
             dispatch({ type: ActionType.SELECT_AREA, payload: { areaId: newArea?.id, clearSelectedCounterIds: false } });
             dispatch(moveToAction);
-            const addActionAction: ActionAddAction = { type: ActionType.ADD_ACTION, payload: { counterIds: selectedCounterIds, actionToAdd: moveToAction } };
-            dispatch(addActionAction);
+            // const addActionAction: ActionAddAction = { type: ActionType.ADD_ACTION, payload: { counterIds: selectedCounterIds, actionToAdd: moveToAction } };
+            // dispatch(addActionAction);
         }).catch((resp) => {
             dispatch({ type: ActionType.SET_STATUS_MESSAGE, payload: resp.message });
         });

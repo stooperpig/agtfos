@@ -22,7 +22,10 @@ export const initializePusher = (secretKey: string | undefined) => {
 }
 
 export const pushAction = (action: string, socketId?: string): boolean => {
+    try {
+    console.log('Pushing action:', action);
     if (pusher === undefined) {
+        console.log('Pusher not initialized');
         return false;
     }
 
@@ -30,6 +33,11 @@ export const pushAction = (action: string, socketId?: string): boolean => {
         pusher.trigger('chat', 'message', action, { socket_id: socketId });
     } else {
         pusher.trigger('chat', 'message', action);
+    }
+    } catch (error) {
+        console.log('Error: Pushing action failed');
+        console.log(error);
+        return false;
     }
     
     return true;

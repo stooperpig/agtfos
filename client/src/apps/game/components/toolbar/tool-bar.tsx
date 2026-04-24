@@ -6,7 +6,7 @@ import { isCrew, isMonster, isWeapon } from '../../../../shared/utils/counter-ut
 import { putData } from '../../../../api/api-utils';
 import { socketId } from '../../../../api/web-socket';
 import ReplayControls from './replay-controller';
-import { ActionAddAction, ActionClearPlan, ActionDropWeapon, ActionGrabWeapon, ActionType } from '../../../../shared/types/action-types';
+import { ActionDropWeapon, ActionGrabWeapon, ActionType } from '../../../../shared/types/action-types';
 import { Phase } from '../../../../shared/types/game-types';
 import { AttackModal } from '../modal/attack-modal/attack-modal';
 
@@ -41,35 +41,6 @@ const ToolBar = () => {
     const buttons = [
         {
             handler: () => {
-                const action: ActionClearPlan = { type: ActionType.CLEAR_PLAN, payload: { counterIds: [...selectedCounterIds] } }
-                putData(`/api/games/${gameId}/action`, { socketId, action }).then(() => {
-                    dispatch(action);
-                }).catch((resp) => {
-                    dispatch({ type: ActionType.SET_STATUS_MESSAGE, payload: resp.message });
-                });
-            },
-            label: () => ('Clear Plan'),
-            className: () => {
-                if (phase !== Phase.MOVE) {
-                    return defaultButtonClass;
-                }
-
-                if (selectedCounterIds.length === 0) {
-                    return defaultButtonClass;
-                }
-
-                if (selectedCounters.some(counter => !isCrew(counter))) {
-                    return defaultButtonClass;
-                }
-
-                if (!selectedCounters.some(counter => counter.actions !== undefined && counter.actions.length > 0)) {
-                    return defaultButtonClass;
-                }
-
-                return enabledButtonClass;
-            }
-        }, {
-            handler: () => {
                 const crewCounter = selectedCounters.find(counter => isCrew(counter));
                 const weaponCounter = selectedCounters.find(counter => isWeapon(counter));
                 if (crewCounter && weaponCounter) {
@@ -77,8 +48,6 @@ const ToolBar = () => {
                     putData(`/api/games/${gameId}/action`, { socketId, action }).then(() => {
                         dispatch({ type: ActionType.DESELECT_COUNTER, payload: { counterId: weaponCounter.id } });
                         dispatch(action);
-                        const addAction: ActionAddAction = { type: ActionType.ADD_ACTION, payload: { counterIds: [crewCounter.id], actionToAdd: action } };
-                        dispatch(addAction);
                     }).catch((resp) => {
                         dispatch({ type: ActionType.SET_STATUS_MESSAGE, payload: resp.message });
                     });
@@ -88,7 +57,7 @@ const ToolBar = () => {
             },
             label: () => ('Grab Weapon'),
             className: () => {
-                if (phase !== Phase.MOVE) {
+                if (phase !== Phase.GRAB_WEAPON) {
                     return defaultButtonClass;
                 }
 
@@ -98,12 +67,8 @@ const ToolBar = () => {
                     return defaultButtonClass;
                 }
 
-                if (selectedCounters[0].usedMovementAllowance > 0) {
-                    return defaultButtonClass;
-                }
-
                 const crewCounter = selectedCounters.find(counter => isCrew(counter));
-                if (crewCounter!.actions && crewCounter?.actions.some(action => action.type === ActionType.GRAB_WEAPON)) {
+                if (crewCounter?.weaponCounterId !== undefined) {
                     return defaultButtonClass;
                 }
 
@@ -116,8 +81,6 @@ const ToolBar = () => {
                     const action: ActionDropWeapon = { type: ActionType.DROP_WEAPON, payload: { crewCounterId: crewCounter.id, weaponCounterId: crewCounter.weaponCounterId!, fromAreaId: crewCounter.areaId!, fromCoord: crewCounter.coord!, movementCost: 0 } };
                     putData(`/api/games/${gameId}/action`, { socketId, action }).then(() => {
                         dispatch(action);
-                        const addAction: ActionAddAction = { type: ActionType.ADD_ACTION, payload: { counterIds: [crewCounter.id], actionToAdd: action } };
-                        dispatch(addAction);
                     }).catch((resp) => {
                         dispatch({ type: ActionType.SET_STATUS_MESSAGE, payload: resp.message });
                     });
@@ -127,7 +90,7 @@ const ToolBar = () => {
             },
             label: () => ('Drop Weapon'),
             className: () => {
-                if (phase !== Phase.MOVE) {
+                if (phase !== Phase.GRAB_WEAPON && phase !== Phase.MOVE) {
                     return defaultButtonClass;
                 }
 
@@ -136,18 +99,14 @@ const ToolBar = () => {
                     return defaultButtonClass;
                 }
 
-                if (selectedCounters[0].usedMovementAllowance > 0) {
-                    return defaultButtonClass;
-                }
-
                 if (selectedCounters[0].weaponCounterId === undefined) {
                     return defaultButtonClass;
                 }
 
-                const crewCounter = selectedCounters.find(counter => isCrew(counter));
-                if (crewCounter!.actions && crewCounter?.actions.some(action => action.type === ActionType.GRAB_WEAPON)) {
-                    return defaultButtonClass;
-                }
+                // const crewCounter = selectedCounters.find(counter => isCrew(counter));
+                // if (crewCounter!.actions && crewCounter?.actions.some(action => action.type === ActionType.GRAB_WEAPON)) {
+                //     return defaultButtonClass;
+                // }
 
                 return enabledButtonClass;
             }
@@ -186,7 +145,7 @@ const ToolBar = () => {
                 // if (crewCounter!.actions && crewCounter?.actions.some(action => action.type === ActionType.GRAB_WEAPON)) {
                 //     return defaultButtonClass;
                 // }
-                if (phase === Phase.MOVE) {
+                if (phase !== Phase.ATTACK) {
                     return defaultButtonClass;
                 }
 
@@ -226,7 +185,7 @@ const ToolBar = () => {
                 // }
 
                 const action = { type: ActionType.PHASE_COMPLETE, payload: { playerId: currentPlayerId } };
-                putData(`/api/games/${gameId}/action`, { socketId, action }).then(() => {
+                putData(`/api/games/${gameId}/phase`, { socketId, action }).then(() => {
                     dispatch(action);
                 }).catch((resp) => {
                     dispatch({ type: ActionType.SET_STATUS_MESSAGE, payload: resp.message });
@@ -235,6 +194,8 @@ const ToolBar = () => {
             label: () => {
                 if (isPhaseCompleted) {
                     return `Waiting...`;
+                } else if (phase === Phase.ATTACK) {
+                    return `Resolve All Attacks`;
                 } else {
                     return `Next Phase`;
                 }

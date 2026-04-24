@@ -1,4 +1,4 @@
-import { Coord, CounterType, GameState, Replay } from "./game-types";
+import { Coord, CounterType, GameState, Phase, Replay } from "./game-types";
 
 export interface Action {
     type: ActionType;
@@ -10,6 +10,7 @@ export enum ActionType {
     GRAB_WEAPON = 'GRAB_WEAPON',
     DESELECT_COUNTER = 'DESELECT_COUNTER',
     PHASE_COMPLETE = 'PHASE_COMPLETE',
+    NEXT_PHASE = 'NEXT_PHASE',
     DROP_WEAPON = 'DROP_WEAPON',
     LOAD_GAME = 'LOAD_GAME',
     UPDATE_CONNECTED_CLIENT_COUNT = 'UPDATE_CONNECTED_CLIENT_COUNT',
@@ -28,22 +29,66 @@ export enum ActionType {
     REPLAY_END = 'REPLAY_END',
     //REPLAY_SET_INDEX = 'REPLAY_SET_INDEX',
     REFRESH_REPLAY = 'REFRESH_REPLAY',
-    ADD_ACTION = 'ADD_ACTION',
-    SET_SPOTTED_OR_ENAGED = 'SET_SPOTTED_OR_ENAGED',
-    UPDATE_MONSTER_PLANS = 'UPDATE_MONSTER_PLANS',
+    //ADD_ACTION = 'ADD_ACTION',
+    //SET_SPOTTED_OR_ENAGED = 'SET_SPOTTED_OR_ENAGED',
+    //UPDATE_MONSTER_PLANS = 'UPDATE_MONSTER_PLANS',
     UPDATE_CREW_ATTACK_PLANS = 'UPDATE_CREW_ATTACK_PLANS',
     GROW_MONSTER = 'GROW_MONSTER',
-    LAY_EGG = 'LAY_EGG'
+    LAY_EGG = 'LAY_EGG',
+    CREATE_ATTACK_GROUP = 'CREATE_ATTACK_GROUP',
+    DELETE_ATTACK_GROUP = 'DELETE_ATTACK_GROUP',
+    REMOVE_COUNTER_FROM_ATTACK_GROUP = 'REMOVE_COUNTER_FROM_ATTACK_GROUP',
+    ADD_COUNTER_TO_ATTACK_GROUP = 'ADD_COUNTER_TO_ATTACK_GROUP'
 }
 
-type UpdateCrewAttackPlansPayload = {
-    actions: Action[];
+type RemoveCounterFromAttackGroupPayload = {
+    attackGroupId: string;
+    counterId: string;
 };
 
-export interface ActionUpdateCrewAttackPlans extends Action {
-    type: ActionType.UPDATE_CREW_ATTACK_PLANS;
-    payload: UpdateCrewAttackPlansPayload;
+export interface ActionRemoveCounterFromAttackGroup extends Action {
+    type: ActionType.REMOVE_COUNTER_FROM_ATTACK_GROUP;
+    payload: RemoveCounterFromAttackGroupPayload;
 }
+
+type AddCounterToAttackGroupPayload = {
+    attackGroupId: string;
+    targetCounterId?: string;
+    attackingCounterId?: string;
+};
+
+export interface ActionAddCounterToAttackGroup extends Action {
+    type: ActionType.ADD_COUNTER_TO_ATTACK_GROUP;
+    payload: AddCounterToAttackGroupPayload;
+}
+
+type DeleteAttackGroupPayload = {
+    attackGroupId: string;
+};
+
+export interface ActionDeleteAttackGroup extends Action {
+    type: ActionType.DELETE_ATTACK_GROUP;
+    payload: DeleteAttackGroupPayload;
+}
+
+type CreateAttackGroupPayload = {
+    areaId: string
+    attackGroupId: string
+};
+
+export interface ActionCreateAttackGroup extends Action {
+    type: ActionType.CREATE_ATTACK_GROUP;
+    payload: CreateAttackGroupPayload;
+}
+
+// type UpdateCrewAttackPlansPayload = {
+//     actions: Action[];
+// };
+
+// export interface ActionUpdateCrewAttackPlans extends Action {
+//     type: ActionType.UPDATE_CREW_ATTACK_PLANS;
+//     payload: UpdateCrewAttackPlansPayload;
+// }
 
 type GrowMonsterPayload = {
     counterId: string;
@@ -77,36 +122,36 @@ export interface ActionLayEgg extends Action {
     payload: LayEggPayload;
 }
 
-type UpdateMonsterPlansPayload = {
-    actionsMap: { [key: string]: Action[] };
-    nextCounterId: string;
-};
+// type UpdateMonsterPlansPayload = {
+//     actionsMap: { [key: string]: Action[] };
+//     nextCounterId: string;
+// };
 
-export interface ActionUpdateMonsterPlans extends Action {
-    type: ActionType.UPDATE_MONSTER_PLANS;
-    payload: UpdateMonsterPlansPayload;
-}
+// export interface ActionUpdateMonsterPlans extends Action {
+//     type: ActionType.UPDATE_MONSTER_PLANS;
+//     payload: UpdateMonsterPlansPayload;
+// }
 
-type SetSpottedOrEnagedPayload = {
-    counterIds: string[];
-    spotted: boolean;
-    enaged: boolean;
-};
+// type SetSpottedOrEnagedPayload = {
+//     counterIds: string[];
+//     spotted: boolean;
+//     enaged: boolean;
+// };
 
-export interface ActionSetSpottedOrEnaged extends Action {
-    type: ActionType.SET_SPOTTED_OR_ENAGED;
-    payload: SetSpottedOrEnagedPayload;
-}
+// export interface ActionSetSpottedOrEnaged extends Action {
+//     type: ActionType.SET_SPOTTED_OR_ENAGED;
+//     payload: SetSpottedOrEnagedPayload;
+// }
 
-type AddActionPayload = {
-    counterIds: string[]
-    actionToAdd: Action;
-};
+// type AddActionPayload = {
+//     counterIds: string[]
+//     actionToAdd: Action;
+// };
 
-export interface ActionAddAction extends Action {
-    type: ActionType.ADD_ACTION;
-    payload: AddActionPayload;
-}
+// export interface ActionAddAction extends Action {
+//     type: ActionType.ADD_ACTION;
+//     payload: AddActionPayload;
+// }
 
 // type InitializeCounterPayload = {
 //     counterId: string,
@@ -123,14 +168,14 @@ export interface ActionAddAction extends Action {
 //     payload: InitializeCounterPayload;
 // }
 
-type ClearActionPayload = {
-    counterIds: string[];
-};
+// type ClearActionPayload = {
+//     counterIds: string[];
+// };
 
-export interface ActionClearPlan extends Action {
-    type: ActionType.CLEAR_PLAN;
-    payload: ClearActionPayload;
-}
+// export interface ActionClearPlan extends Action {
+//     type: ActionType.CLEAR_PLAN;
+//     payload: ClearActionPayload;
+// }
 
 type GrabWeaponActionPayload = {
     crewCounterId: string;
@@ -152,6 +197,15 @@ type DeselectCounterActionPayload = {
 export interface ActionDeselectCounter extends Action {
     type: ActionType.DESELECT_COUNTER;
     payload: DeselectCounterActionPayload;
+}
+
+type NextPhasePayload = {
+    phase: Phase;
+};
+
+export interface ActionNextPhase extends Action {
+    type: ActionType.NEXT_PHASE;
+    payload: NextPhasePayload;
 }
 
 type PhaseCompletePayload = {
@@ -215,12 +269,13 @@ export interface ActionSelectArea extends Action {
 };
 
 type MoveToCoordPayload = {
-    counterIds: string[];
-    fromAreaId: string;
-    fromCoords: Coord[];
-    toAreaId: string;
-    toCoord: Coord;
+    counterIds: string[]
+    fromAreaId: string
+    fromCoords: Coord[]
+    toAreaId: string
+    toCoord: Coord
     movementCost: number
+    engaged: boolean
 };
 
 export interface ActionMoveToCoord extends Action {

@@ -40,10 +40,10 @@ export enum ApertureType {
 }
 
 export interface AttackGroup {
-    targetCounterId: string;
+    id: string
+    areaId: string
+    targetCounterIds: string[];
     attackingCounterIds: string[];
-    dice: number
-    targetDice: number
 }
 
 export interface Board {
@@ -78,7 +78,7 @@ export interface Counter {
     coord?: Coord
     areaId?: string
     playerId?: string
-    actions: Action[]
+    //actions: Action[]
     ownerCounterId?: string
     engaged: boolean
     spotted: boolean
@@ -126,6 +126,7 @@ export interface GameState {
     scenarioId: string
     counterMap: CounterMap
     nextCounterId: number
+    nextAttackGroupId: number
     stackMap: StackMap
     connectedClients: number
     currentPlayerId: string
@@ -143,6 +144,7 @@ export interface GameState {
     selectedCounterIds: string[]
     monsterTurnStatus: PlayerTurnStatus
     replay?: Replay
+    attackGroups: AttackGroup[]
 }
 
 export enum GameStatus {
@@ -215,8 +217,12 @@ export interface NewGamePlayer {
 }
 
 export enum Phase {
+    GRAB_WEAPON = "GRAB_WEAPON",
     MOVE = "MOVE",
     ATTACK = "ATTACK",
+    ATTACK_REPLAY = "ATTACK_REPLAY",
+    MONSTER_REPLAY = "MONSTER_REPLAY",
+    MONSTER_PHASE = "MONSTER_PHASE"
 }
 
 export type Polygon = Coord[];
@@ -327,6 +333,8 @@ export interface Scenario {
         [key: string]: {
             count: number
             imageName: string
+            effectType: WeaponEffectType
+            range: number
         }
     }
 }
@@ -353,6 +361,11 @@ export interface Stack {
 
 export interface StackMap {
     [key: string]: Stack
+}
+
+export enum WeaponEffectType {
+    SINGLE_TARGET = "SINGLE_TARGET",
+    AREA = "AREA"
 }
 
 export enum WeaponEffect {

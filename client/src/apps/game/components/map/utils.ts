@@ -28,9 +28,9 @@ export const validateMove = (selectedCounterIds: string[], fromAreaId: string | 
 
     if (fromAreaId !== toAreaId && selectedCounterIds.some((counterId: string) => {
         const counter = counterMap[counterId];
-        return counter.stunned;
+        return counter.stunned || counter.engaged;
     })) {
-        return 'You can not move stunned counters';
+        return 'You can not move stunned or engaged counters';
     }
 
     if (selectedCounterIds.some((counterId: string) => {

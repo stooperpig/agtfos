@@ -49,3 +49,7 @@ img.counter-panel-weapon-image {
     color: white;
     background-color: red;
 }   
+
+.counter-panel-player-name {
+    padding-top: 2px;
+}

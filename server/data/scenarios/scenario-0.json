@@ -6,51 +6,75 @@
   "weaponMap": {
     "BOTTLE_OF_ACID": {
       "count": 3,
-      "imageName": "BottleOfAcid"
+      "imageName": "BottleOfAcid",
+      "effectType": "SINGLE_TARGET",
+      "range": 1
     },
     "CANNISTER_OF_ZGWORTZ": {
       "count": 3,
-      "imageName": "CannisterOfZgwortz"
+      "imageName": "CannisterOfZgwortz",
+      "effectType": "SINGLE_TARGET",
+      "range": 1
     },
     "COMMUNICATIONS_BEAMER": {
       "count": 2,
-      "imageName": "CommBeamer"
+      "imageName": "CommBeamer",
+      "effectType": "AREA",
+      "range": 5
     },
     "ELECTRIC_FENCE": {
       "count": 2,
-      "imageName": "ElectricFence"
+      "imageName": "ElectricFence",
+      "effectType": "AREA",
+      "range": 0
     },
     "FIRE_EXTINGUSHER": {
       "count": 2,
-      "imageName": "FireExtinguisher"
+      "imageName": "FireExtinguisher",
+      "effectType": "AREA",
+      "range": 0
     },
     "GAS_GRENADE": {
       "count": 3,
-      "imageName": "GasGrenade"
+      "imageName": "GasGrenade",
+      "effectType": "MULTIPLE_AREAS",
+      "range": 1
     },
     "HYPODERMIC": {
       "count": 2,
-      "imageName": "Hypodermic"
+      "imageName": "Hypodermic",
+      "effectType": "SINGLE_TARGET",
+      "range": 0
     },
     "KNIFE": {
       "count": 3,
-      "imageName": "Knife"
+      "imageName": "Knife",
+      "effectType": "SINGLE_TARGET",
+      "range": 1
     },
     "POOL_STICK": {
       "count": 2,
-      "imageName": "PoolStick"
+      "imageName": "PoolStick",
+      "effectType": "SINGLE_TARGET",
+      "range": 0
     },
     "CAN_OF_ROCKET_FUEL": {
       "count": 3,
-      "imageName": "RocketFuel"
+      "imageName": "RocketFuel",
+      "effectType": "MULTIPLE_AREAS",
+      "range": 1
     },
     "STUN_PISTOL": {
       "count": 2,
-      "imageName": "StunPistol"
+      "imageName": "StunPistol",
+      "effectType": "SINGLE_TARGET",
+      "range": 5
     },
     "WELDING_TORCH": {
       "count": 2,
-      "imageName": "WeldingTorch"
+      "imageName": "WeldingTorch",
+      "effectType": "SINGLE_TARGET",
+      "range": 0
     }
   },
   "board": {

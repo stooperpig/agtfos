@@ -42,6 +42,7 @@ export enum ApertureType {
 export interface AttackGroup {
     id: string
     areaId: string
+    areaAttack: boolean
     targetCounterIds: string[];
     attackingCounterIds: string[];
 }
@@ -365,7 +366,8 @@ export interface StackMap {
 
 export enum WeaponEffectType {
     SINGLE_TARGET = "SINGLE_TARGET",
-    AREA = "AREA"
+    AREA = "AREA",
+    MULTIPLE_AREAS = "MULTIPLE_AREAS"
 }
 
 export enum WeaponEffect {

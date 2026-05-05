@@ -42,9 +42,16 @@ export enum ApertureType {
 export interface AttackGroup {
     id: string
     areaId: string
-    areaAttack: boolean
-    targetCounterIds: string[];
-    attackingCounterIds: string[];
+    type: AttackGroupType
+    targetCounterIds: string[]
+    attackingCounterIds: string[]
+    goalDice: number
+    dice: number
+}
+
+export enum AttackGroupType {
+    SINGLE_TARGET = "SINGLE_TARGET",
+    AREA = "AREA"
 }
 
 export interface Board {
@@ -127,7 +134,6 @@ export interface GameState {
     scenarioId: string
     counterMap: CounterMap
     nextCounterId: number
-    nextAttackGroupId: number
     stackMap: StackMap
     connectedClients: number
     currentPlayerId: string
@@ -219,11 +225,13 @@ export interface NewGamePlayer {
 
 export enum Phase {
     GRAB_WEAPON = "GRAB_WEAPON",
-    MOVE = "MOVE",
-    ATTACK = "ATTACK",
-    ATTACK_REPLAY = "ATTACK_REPLAY",
-    MONSTER_REPLAY = "MONSTER_REPLAY",
-    MONSTER_PHASE = "MONSTER_PHASE"
+    CREW_MOVE = "CREW_MOVE",
+    CREW_ATTACK = "CREW_ATTACK",
+    CREW_ATTACK_REPLAY = "CREW_ATTACK_REPLAY",
+    MONSTER_MOVE = "MONSTER_MOVE",
+    MONSTER_MOVE_REPLAY = "MONSTER_MOVE_REPLAY",
+    MONSTER_ATTACK = "MONSTER_ATTACK",
+    MONSTER_ATTACK_REPLAY = "MONSTER_ATTACK_REPLAY"
 }
 
 export type Polygon = Coord[];
@@ -336,6 +344,7 @@ export interface Scenario {
             imageName: string
             effectType: WeaponEffectType
             range: number
+            targetType: WeaponTargetType
         }
     }
 }
@@ -368,6 +377,11 @@ export enum WeaponEffectType {
     SINGLE_TARGET = "SINGLE_TARGET",
     AREA = "AREA",
     MULTIPLE_AREAS = "MULTIPLE_AREAS"
+}
+
+export enum WeaponTargetType {
+    MONSTER_ONLY = "MONSTER_ONLY",
+    ALL = "ALL"
 }
 
 export enum WeaponEffect {

@@ -1,4 +1,4 @@
-import { Coord, CounterType, GameState, Phase, Replay } from "./game-types";
+import { AttackGroupType, Coord, CounterType, GameState, Phase, PlayerTurnStatus, Replay } from "./game-types";
 
 export interface Action {
     type: ActionType;
@@ -38,7 +38,7 @@ export enum ActionType {
     CREATE_ATTACK_GROUP = 'CREATE_ATTACK_GROUP',
     DELETE_ATTACK_GROUP = 'DELETE_ATTACK_GROUP',
     REMOVE_COUNTER_FROM_ATTACK_GROUP = 'REMOVE_COUNTER_FROM_ATTACK_GROUP',
-    ADD_COUNTER_TO_ATTACK_GROUP = 'ADD_COUNTER_TO_ATTACK_GROUP'
+    ADD_COUNTERS_TO_ATTACK_GROUP = 'ADD_COUNTERS_TO_ATTACK_GROUP'
 }
 
 type RemoveCounterFromAttackGroupPayload = {
@@ -51,15 +51,15 @@ export interface ActionRemoveCounterFromAttackGroup extends Action {
     payload: RemoveCounterFromAttackGroupPayload;
 }
 
-type AddCounterToAttackGroupPayload = {
+type AddCountersToAttackGroupPayload = {
     attackGroupId: string;
-    targetCounterId?: string;
-    attackingCounterId?: string;
+    targetCounterIds?: string[];
+    attackingCounterIds?: string[];
 };
 
-export interface ActionAddCounterToAttackGroup extends Action {
-    type: ActionType.ADD_COUNTER_TO_ATTACK_GROUP;
-    payload: AddCounterToAttackGroupPayload;
+export interface ActionAddCountersToAttackGroup extends Action {
+    type: ActionType.ADD_COUNTERS_TO_ATTACK_GROUP;
+    payload: AddCountersToAttackGroupPayload;
 }
 
 type DeleteAttackGroupPayload = {
@@ -73,7 +73,10 @@ export interface ActionDeleteAttackGroup extends Action {
 
 type CreateAttackGroupPayload = {
     areaId: string
-    attackGroupId: string
+    attackGroupId: string,
+    type: AttackGroupType
+    targetCounterIds?: string[];
+    attackingCounterIds?: string[];
 };
 
 export interface ActionCreateAttackGroup extends Action {
@@ -201,6 +204,7 @@ export interface ActionDeselectCounter extends Action {
 
 type NextPhasePayload = {
     phase: Phase;
+    playerStatus: PlayerTurnStatus
 };
 
 export interface ActionNextPhase extends Action {
@@ -279,22 +283,22 @@ type MoveToCoordPayload = {
 };
 
 export interface ActionMoveToCoord extends Action {
-    type: ActionType.MOVE_TO_COORD;
-    payload: MoveToCoordPayload;
+    type: ActionType.MOVE_TO_COORD
+    payload: MoveToCoordPayload
 }
 
 type SetStatusMessagePayload = string;
 
 export interface ActionSetStatusMessage extends Action {
-    type: ActionType.SET_STATUS_MESSAGE;
-    payload: SetStatusMessagePayload;
+    type: ActionType.SET_STATUS_MESSAGE
+    payload: SetStatusMessagePayload
 }
 
 type ReplayShowPayload = boolean;
 
 export interface ActionReplayShow extends Action {
-    type: ActionType.REPLAY_SHOW;
-    payload: ReplayShowPayload;
+    type: ActionType.REPLAY_SHOW
+    payload: ReplayShowPayload
 }
 
 // type ReplaySetIndexPayload = number;

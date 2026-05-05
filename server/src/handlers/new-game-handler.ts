@@ -46,7 +46,6 @@ export const createNewGame = (newPlayers: NewGamePlayer[], scenario: Scenario, d
         scenarioId: scenario.id,
         stackMap: {},
         nextCounterId: 0,
-        nextAttackGroupId: 0,
         counterMap: {},
         weaponEffectMap: {},
         mapScale: 0.5,

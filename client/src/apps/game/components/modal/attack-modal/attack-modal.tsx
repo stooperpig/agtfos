@@ -2,12 +2,12 @@ import "./attack-modal.css";
 import { useState } from "react";
 import React from "react";
 import Modal from "../modal";
-import { useDispatch, useSelector } from "react-redux";
-import { Stack, Counter, CounterType, AttackGroup } from "../../../../../shared/types/game-types";
-import { isCrew, isMonster } from "../../../../../shared/utils/counter-utils";
+import { Stack, Counter, CounterType, AttackGroup, WeaponEffectType, AttackGroupType, WeaponTargetType } from "../../../../../shared/types/game-types";
+import { isCrew, isMonster, isWeapon } from "../../../../../shared/utils/counter-utils";
 import { RootState, useAppDispatch, useAppSelector } from "../../../../../constants/store";
+import { getWeaponTargetType, isAreaWeapon } from "../../../utils/counter-utils";
 import { CounterDisplay } from "./counter-display";
-import { ActionAddCounterToAttackGroup, ActionCreateAttackGroup, ActionDeleteAttackGroup, ActionRemoveCounterFromAttackGroup, ActionType } from "../../../../../shared/types/action-types";
+import { ActionAddCountersToAttackGroup, ActionCreateAttackGroup, ActionDeleteAttackGroup, ActionRemoveCounterFromAttackGroup, ActionSetStatusMessage, ActionType } from "../../../../../shared/types/action-types";
 import { putData } from "../../../../../api/api-utils";
 import { socketId } from '../../../../../api/web-socket';
 import { AttackGroupDisplay } from "./attack-group-display";
@@ -25,9 +25,6 @@ export const AttackModal = (props: PropTypes) => {
     const gameId = useAppSelector((state: RootState) => state.id);
     const counterMap = useAppSelector((state: RootState) => state.counterMap);
     const allAttackGroups = useAppSelector((state: RootState) => state.attackGroups ?? []);
-    //const [attackGroups, setAttackGroups] = useState<AttackGroup[]>([]);
-    const [selectedCrewOrWeapon, setSelectedCrewOrWeapon] = useState<string[]>([]);
-    const [selectedMonsters, setSelectedMonsters] = useState<string[]>([]);
     const [activeGroupId, setActiveGroupId] = useState<string | undefined>(undefined);
 
     const attackGroups = allAttackGroups.filter(attackGroup => attackGroup.areaId === props.areaId);
@@ -53,7 +50,7 @@ export const AttackModal = (props: PropTypes) => {
 
     const getAvailableMonsterCounters = (): Counter[] => {
         const allMonsters = getStackCounters().filter(counter => isMonster(counter));
-        const usedMonsterIds = attackGroups?.flatMap(group => group.targetCounterIds.map(counterId => counterId)) || [];
+        const usedMonsterIds = attackGroups?.flatMap(group => { return group.type === AttackGroupType.AREA ? [] : group.targetCounterIds.map(counterId => counterId) }) || [];
 
         return allMonsters.filter(counter => !usedMonsterIds.includes(counter.id));
     }
@@ -68,27 +65,78 @@ export const AttackModal = (props: PropTypes) => {
 
     const toggleCrewSelection = (counterId: string) => {
         if (activeGroupId) {
-            // Add to active group instead of selection
             addCrewOrWeaponToActiveGroup(counterId);
         } else {
-            // Existing selection logic for creating new groups
             const usedCrewIds = attackGroups?.flatMap(group => group.attackingCounterIds)?.filter(Boolean) || [];
             if (usedCrewIds.includes(counterId)) {
-                return; // Prevent selection if already in a group
+                return;
             }
-
-            setSelectedCrewOrWeapon(prev => prev.includes(counterId) ? prev.filter(id => id !== counterId) : [...prev, counterId]);
         }
+    }
+
+    const getAreaAttackGroup = (): AttackGroup | undefined => {
+        return attackGroups?.find(group => group.type === AttackGroupType.AREA);
+    }
+
+    const getActiveGroup = (): AttackGroup | undefined => {
+        return attackGroups?.find(group => group.id === activeGroupId);
     }
 
     const addCrewOrWeaponToActiveGroup = (counterId: string) => {
         if (!activeGroupId) return;
 
-        const action: ActionAddCounterToAttackGroup = {
-            type: ActionType.ADD_COUNTER_TO_ATTACK_GROUP,
+        const activeGroup = getActiveGroup();
+        if (!activeGroup) return;
+
+        const counter = counterMap[counterId];
+        if (!counter) return;
+
+        //when adding area weapon to a group if the groups does not have targets then 
+        //   add all monsters to the group
+        //   if weapon is a area weapon that affects crew also then create a friendly fire group and add crew to it.
+        //   why not automatically handle the area group the same way (i.e. create area group and add monsters to it)
+        //if (isWeapon(counter) && activeGroup.type === AttackGroupType.SINGLE_TARGET && isAreaWeapon(counter)) {
+        //    const areaAttackGroup = getAreaAttackGroup();
+            //todo: find/create the area attack group and add all monsters to it
+        //} 
+        
+        //const areaAttackGroup = getAreaAttackGroup();
+
+        //   see if the proper group type exists for those types of weapons.  if not create it and add this weapon to it and all the impacted counters to it.
+
+        //   this means that you have to clear the friendly fire group if that weapon is removed.
+        //handle case where weapon has a multiple area effect (creating other groups for other areas too?)
+
+
+
+        //const attackGroup = attackGroups.find(attackGroup => attackGroup.id === activeGroupId);
+        if (!activeGroup) {
+            return;
+        }
+
+        if (isWeapon(counter) && activeGroup.type === AttackGroupType.SINGLE_TARGET && isAreaWeapon(counter)) {
+            const action: ActionSetStatusMessage = { type: ActionType.SET_STATUS_MESSAGE, payload: 'Cannot add area weapon to an single target attack group' }
+            dispatch(action);
+            return;
+        }
+
+        if (isWeapon(counter) && activeGroup.type === AttackGroupType.AREA && !isAreaWeapon(counter)) {
+            const action: ActionSetStatusMessage = { type: ActionType.SET_STATUS_MESSAGE, payload: 'Cannot add non-area weapons to an area attack group' }
+            dispatch(action);
+            return;
+        }
+
+        if (!isWeapon(counter) && activeGroup.type === AttackGroupType.AREA) {
+            const action: ActionSetStatusMessage = { type: ActionType.SET_STATUS_MESSAGE, payload: 'Cannot add crew member to area attack group without area effect weapon' }
+            dispatch(action);
+            return;
+        }
+
+        const action: ActionAddCountersToAttackGroup = {
+            type: ActionType.ADD_COUNTERS_TO_ATTACK_GROUP,
             payload: {
                 attackGroupId: activeGroupId,
-                attackingCounterId: counterId,
+                attackingCounterIds: [counterId],
             }
         };
 
@@ -96,30 +144,25 @@ export const AttackModal = (props: PropTypes) => {
         putData(`api/games/${gameId}/attackgroup`, { socketId, action: action }).then((resp) => {
             dispatch(action);
             setActiveGroupId(action.payload.attackGroupId);
-            //setSelectedCrewOrWeapon([]);
-            //setSelectedMonsters([]);
         }).catch((resp) => {
             dispatch({ type: ActionType.SET_STATUS_MESSAGE, payload: resp.message });
         });
-
-        // setAttackGroups((prevAttackGroups: AttackGroup[]) => {
-        //     return prevAttackGroups.map(group => {
-        //         if (group.id === activeGroupId) {
-        //             const counter = counterMap[counterId];
-        //             if (!counter || group.attackingCounterIds.includes(counterId)) return group; // Already in group
-
-        //             return {
-        //                 ...group,
-        //                 attackingCounters: [...group.attackingCounterIds, counter]
-        //             };
-        //         }
-        //         return group;
-        //     });
-        // });
     };
 
     const addMonsterToActiveGroup = (counterId: string) => {
         if (!activeGroupId) {
+            return;
+        }
+
+        const counter = counterMap[counterId];
+        if (!counter) return;
+
+        const attackGroup = attackGroups?.find(group => group.id === activeGroupId);
+        if (!attackGroup) return;
+
+        if (attackGroup.type === AttackGroupType.AREA) {
+            const action: ActionSetStatusMessage = { type: ActionType.SET_STATUS_MESSAGE, payload: 'Cannot manually add targets to area attack group' }
+            dispatch(action);
             return;
         }
 
@@ -128,11 +171,11 @@ export const AttackModal = (props: PropTypes) => {
             return;
         }
 
-        const action: ActionAddCounterToAttackGroup = {
-            type: ActionType.ADD_COUNTER_TO_ATTACK_GROUP,
+        const action: ActionAddCountersToAttackGroup = {
+            type: ActionType.ADD_COUNTERS_TO_ATTACK_GROUP,
             payload: {
                 attackGroupId: activeGroupId,
-                targetCounterId: counterId,
+                targetCounterIds: [counterId],
             }
         };
 
@@ -140,59 +183,37 @@ export const AttackModal = (props: PropTypes) => {
         putData(`api/games/${gameId}/attackgroup`, { socketId, action: action }).then((resp) => {
             dispatch(action);
             setActiveGroupId(action.payload.attackGroupId);
-            //setSelectedCrewOrWeapon([]);
-            //setSelectedMonsters([]);
         }).catch((resp) => {
             dispatch({ type: ActionType.SET_STATUS_MESSAGE, payload: resp.message });
         });
-
-        // setAttackGroups((prevAttackGroups: AttackGroup[]) => {
-        //     return prevAttackGroups.map(group => {
-        //         if (group.id === activeGroupId) {
-        //             const counter = counterMap[counterId];
-        //             if (!counter || group.targetCounterIds.includes(counterId)) return group; // Already in group
-
-        //             return {
-        //                 ...group,
-        //                 targetCounters: [...group.targetCounterIds, counter]
-        //             };
-        //         }
-        //         return group;
-        //     });
-        // });
     };
 
     const toggleMonsterSelection = (counterId: string) => {
-        if (selectedMonsters.includes(counterId)) {
-            setSelectedMonsters(prev => prev.filter(id => id !== counterId));
-            return;
-        }
-
-        if (selectedMonsters.length >= 1) {
-            return;
-        }
-
         if (activeGroupId) {
-            // Add to active group instead of selection
             addMonsterToActiveGroup(counterId);
         } else {
-            // Existing selection logic for creating new groups
             const usedMonsterIds = attackGroups?.flatMap(group => group.targetCounterIds)?.filter(Boolean) || [];
             if (usedMonsterIds.includes(counterId)) {
-                return; // Prevent selection if already in a group
+                return;
             }
-
-            setSelectedMonsters(prev => prev.includes(counterId) ? prev.filter(id => id !== counterId) : [...prev, counterId]);
         }
     };
 
-    const createAttackGroup = () => {
+    const createAttackGroup = (attackGroupType: AttackGroupType) => {
+        if (attackGroupType === AttackGroupType.AREA) {
+            if (getAreaAttackGroup()) {
+                dispatch({ type: ActionType.SET_STATUS_MESSAGE, payload: "Area attack group already exists" });
+                return;
+            }
+        }
+
         console.log('create attack group');
         const action: ActionCreateAttackGroup = {
             type: ActionType.CREATE_ATTACK_GROUP,
             payload: {
                 areaId: props.areaId!,
                 attackGroupId: crypto.randomUUID(),
+                type: attackGroupType
             }
         };
 
@@ -200,24 +221,26 @@ export const AttackModal = (props: PropTypes) => {
         putData(`api/games/${gameId}/attackgroup`, { socketId, action: action }).then((resp) => {
             dispatch(action);
             setActiveGroupId(action.payload.attackGroupId);
-            setSelectedCrewOrWeapon([]);
-            setSelectedMonsters([]);
+            if (action.payload.type === AttackGroupType.AREA) {
+                const allMonsters = getStackCounters().filter(counter => isMonster(counter));
+                if (allMonsters.length > 0) {
+                    const addMonstersAction: ActionAddCountersToAttackGroup = {
+                        type: ActionType.ADD_COUNTERS_TO_ATTACK_GROUP,
+                        payload: {
+                            attackGroupId: action.payload.attackGroupId,
+                            targetCounterIds: allMonsters.map(monster => monster.id)
+                        }
+                    };
+                    putData(`api/games/${gameId}/attackgroup`, { socketId, action: addMonstersAction }).then((resp) => {
+                        dispatch(addMonstersAction);
+                    }).catch((resp) => {
+                        dispatch({ type: ActionType.SET_STATUS_MESSAGE, payload: resp.message });
+                    });
+                }
+            }
         }).catch((resp) => {
             dispatch({ type: ActionType.SET_STATUS_MESSAGE, payload: resp.message });
         });
-        // const crew = selectedCrewOrWeapon.map(id => counterMap[id]).filter(Boolean);
-        // const monsters = selectedMonsters.map(id => counterMap[id]).filter(Boolean);
-
-        // const newGroup: AttackGroup = {
-        //     id: `group-${Date.now()}`,
-        //     attackingCounterIds: crew.length > 0 ? crew.map(c => c.id) : [],
-        //     targetCounterIds: monsters.length > 0 ? monsters.map(c => c.id) : []
-        // };
-
-        // setAttackGroups(prevAttackGroups => [...prevAttackGroups, newGroup]);
-        // setSelectedCrewOrWeapon([]);
-        // setSelectedMonsters([]);
-        // setActiveGroupId(newGroup.id);
     }
 
     const handleGroupClick = (groupId: string) => {
@@ -239,31 +262,12 @@ export const AttackModal = (props: PropTypes) => {
         putData(`api/games/${gameId}/attackgroup`, { socketId, action: action }).then((resp) => {
             dispatch(action);
             setActiveGroupId(action.payload.attackGroupId);
-            //setSelectedCrewOrWeapon([]);
-            //setSelectedMonsters([]);
         }).catch((resp) => {
             dispatch({ type: ActionType.SET_STATUS_MESSAGE, payload: resp.message });
         });
-
-        // const updatedGroups = attackGroups.map(group => {
-        //     if (group.id === groupId) {
-        //         const updatedGroup = {
-        //             ...group,
-        //             attackingCounterIds: group.attackingCounterIds?.filter((id: string) => id !== counterId) || [],
-        //             targetCounterIds: group.targetCounterIds?.filter((id: string) => id !== counterId) || []
-        //         };
-
-        //         return updatedGroup;
-        //     }
-        //     return group;
-        // });
-        //setAttackGroups(updatedGroups);
     };
 
     const removeAttackGroup = (groupId: string) => {
-        //setAttackGroups((prevAttackGroups: AttackGroup[]) => prevAttackGroups.filter(group => group.id !== groupId));
-
-
         const action: ActionDeleteAttackGroup = {
             type: ActionType.DELETE_ATTACK_GROUP,
             payload: {
@@ -274,19 +278,15 @@ export const AttackModal = (props: PropTypes) => {
         console.log(JSON.stringify(action));
         putData(`api/games/${gameId}/attackgroup`, { socketId, action: action }).then((resp) => {
             dispatch(action);
-            //setActiveGroupId(action.payload.attackGroupId);
             if (activeGroupId === groupId) {
                 setActiveGroupId(attackGroups.find(group => group.id !== groupId)?.id || undefined);
             }
-            //setSelectedCrewOrWeapon([]);
-            //setSelectedMonsters([]);
         }).catch((resp) => {
             dispatch({ type: ActionType.SET_STATUS_MESSAGE, payload: resp.message });
         });
     }
 
     const handleSubmit = () => {
-        // TODO: Handle attack submission logic
         console.log('Attack groups:', attackGroups);
         handleClose();
     }
@@ -310,7 +310,7 @@ export const AttackModal = (props: PropTypes) => {
                                     <CounterDisplay
                                         key={counter.id}
                                         counter={counter}
-                                        selected={selectedCrewOrWeapon.includes(counter.id) || selectedCrewOrWeapon.includes(counter.weaponCounterId || '')}
+                                        selected={false}
                                         onClick={toggleCrewSelection}
                                     />
                                 ))}
@@ -348,11 +348,11 @@ export const AttackModal = (props: PropTypes) => {
                             </div>
 
                             <div className="attack-modal-buttons">
-                                <button
-                                    className="attack-modal-button create-group-btn"
-                                    onClick={createAttackGroup}
-                                >
-                                    Create Group
+                                <button className="attack-modal-button create-group-btn" onClick={() => createAttackGroup(AttackGroupType.SINGLE_TARGET)} >
+                                    Create Single Target Attack
+                                </button>
+                                <button className="attack-modal-button create-group-btn" onClick={() => createAttackGroup(AttackGroupType.AREA)} disabled={getAreaAttackGroup() !== undefined} >
+                                    Create Area Attack
                                 </button>
                                 <button className="attack-modal-button cancel-btn" onClick={handleClose}>
                                     Exit
@@ -368,7 +368,7 @@ export const AttackModal = (props: PropTypes) => {
                                     <CounterDisplay
                                         key={counter.id}
                                         counter={counter}
-                                        selected={selectedMonsters.includes(counter.id)}
+                                        selected={false}
                                         onClick={toggleMonsterSelection}
                                     />
                                 ))}

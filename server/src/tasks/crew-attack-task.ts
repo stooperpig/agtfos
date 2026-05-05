@@ -14,68 +14,73 @@ function blockingSleep(ms: number) {
     Atomics.wait(int32, 0, 0, ms);
 }
 
-export const runPhase = (data: any, postMessage: (data: any) => void): void => {
+export const crewAttack = (data: any, postMessage: (data: any) => void): void => {
     try {
         const gameState = data as GameState;
-        const preReplay = readReplay(gameState.id, ReplayType.PRE);
-        console.log(`runPhase: starting for game: ${data.id} phase: ${gameState.phase}`);
+        // const preReplay = readReplay(gameState.id, ReplayType.PRE);
+        console.log(`crewAttack: starting for game: ${data.id} phase: ${gameState.phase}`);
 
-        //get the current counters and their actions
-        const currentCrewAndMonsterCounters = Object.values(gameState.counterMap).filter(counter => !isWeapon(counter));
+        // //get the current counters and their actions
+        // const currentCrewAndMonsterCounters = Object.values(gameState.counterMap).filter(counter => !isWeapon(counter));
 
-        //update state with the starting state from pre-replay
-        gameState.counterMap = cloneDeep(preReplay.startingState.counterMap);
-        gameState.stackMap = cloneDeep(preReplay.startingState.stackMap);
+        // //update state with the starting state from pre-replay
+        // gameState.counterMap = cloneDeep(preReplay.startingState.counterMap);
+        // gameState.stackMap = cloneDeep(preReplay.startingState.stackMap);
 
-        //take the planned actions from the current state and apply them to the starting state
-        currentCrewAndMonsterCounters.forEach(currentCounter => {
-            const startingCounter = gameState.counterMap[currentCounter.id];
-            if (startingCounter) {
-                //startingCounter.actions = currentCounter.actions;
-            }
-        });
+        // //take the planned actions from the current state and apply them to the starting state
+        // currentCrewAndMonsterCounters.forEach(currentCounter => {
+        //     const startingCounter = gameState.counterMap[currentCounter.id];
+        //     if (startingCounter) {
+        //         //startingCounter.actions = currentCounter.actions;
+        //     }
+        // });
 
-        const replayElements: ReplayElements = {
-            movementElements: [] as ReplayMovementElement[],
-            attackElements: [] as ReplayAttackElement[]
-        };
+        // const replayElements: ReplayElements = {
+        //     movementElements: [] as ReplayMovementElement[],
+        //     attackElements: [] as ReplayAttackElement[]
+        // };
 
-        if (gameState.phase === Phase.MOVE) {
-            const replayMovementElements = executeMovementPhase(gameState);
-            console.log(`Created ${replayMovementElements.length} replay movement elements for game ${gameState.id}`);
-            replayElements.movementElements = replayMovementElements;
-        } else {
-            const replayAttackElements = executeAttackPhaseActions(gameState);
-            console.log(`Created ${replayAttackElements.length} replay attack elements`);
-            replayElements.attackElements = replayAttackElements;
-        }
-        
-        resetCounters(gameState);
+        // if (gameState.phase === Phase.MOVE) {
+        //     const replayMovementElements = executeMovementPhase(gameState);
+        //     console.log(`Created ${replayMovementElements.length} replay movement elements for game ${gameState.id}`);
+        //     replayElements.movementElements = replayMovementElements;
+        // } else {
+        //     const replayAttackElements = executeAttackPhaseActions(gameState);
+        //     console.log(`Created ${replayAttackElements.length} replay attack elements`);
+        //     replayElements.attackElements = replayAttackElements;
+        // }
 
-        gameState.turn = gameState.phase === Phase.MOVE ? gameState.turn : gameState.turn + 1;
-        gameState.phase = gameState.phase === Phase.MOVE ? Phase.ATTACK : Phase.MOVE;
+        resetCounters(gameState); //don't clear crew that was just stunned in this attack (collateral); need second flag; we want to keep the stunned from prior to the attack for display in th replay? maybe not, move to start of task?
+
+        // gameState.turn = gameState.phase === Phase.MOVE ? gameState.turn : gameState.turn + 1;
+        // gameState.phase = gameState.phase === Phase.MOVE ? Phase.ATTACK : Phase.MOVE;
+        // gameState.players.forEach(player => {
+        //     player.turnStatus = PlayerTurnStatus.STARTED;
+        // });
+
+        // const postReplay: Replay = {
+        //     startingState: preReplay.startingState,
+        //     activeState: preReplay.startingState,
+        //     replayElements,
+        //     index: -1,
+        //     playing: false,
+        //     show: false
+        // };
+        // writeReplay(gameState.id, postReplay, ReplayType.POST);
+
+        // preReplay.startingState.counterMap = gameState.counterMap;
+        // preReplay.startingState.stackMap = gameState.stackMap;
+        // writeReplay(gameState.id, preReplay, ReplayType.PRE);
+        gameState.attackGroups = [];
+        gameState.phase = Phase.CREW_ATTACK_REPLAY;
         gameState.players.forEach(player => {
             player.turnStatus = PlayerTurnStatus.STARTED;
         });
 
-        const postReplay: Replay = {
-            startingState: preReplay.startingState,
-            activeState: preReplay.startingState,
-            replayElements,
-            index: -1,
-            playing: false,
-            show: false
-        };
-        writeReplay(gameState.id, postReplay, ReplayType.POST);
-
-        preReplay.startingState.counterMap = gameState.counterMap;
-        preReplay.startingState.stackMap = gameState.stackMap;
-        writeReplay(gameState.id, preReplay, ReplayType.PRE);
-
         postMessage({ status: "notifyClient", payload: { gameId: gameState.id, gameState } });
         postMessage({ status: "done", payload: { gameId: gameState.id } });
     } catch (error) {
-        console.error(`runPhase: error for game: ${data.id}`, error);
+        console.error(`crewAttack: error for game: ${data.id}`, error);
         postMessage({ status: "error", payload: { gameId: data.id, error } });
     }
 }
@@ -84,29 +89,32 @@ const resetCounters = (gameState: GameState) => {
     console.log(`Resetting counters for game ${gameState.id}`);
     const counters = Object.values(gameState.counterMap);
     counters.forEach(counter => {
-        //counter.actions = [];
-        counter.usedMovementAllowance = 0;
+        if (isCrew(counter)) {
+            counter.usedMovementAllowance = 0;
+            counter.stunned = false;
+            counter.engaged = false;
+        }
     });
 }
 
-const executeAttackPhaseActions = (gameState: GameState): ReplayAttackElement[] => {
-    console.log(`Executing attack phase for game ${gameState.id}`);
+// const executeAttackPhaseActions = (gameState: GameState): ReplayAttackElement[] => {
+//     console.log(`Executing attack phase for game ${gameState.id}`);
 
-    //clear engaged flag for all counters
-    Object.values(gameState.counterMap).forEach(counter => {
-        counter.engaged = false;
-    });
-    return [];
-}
+//     //clear engaged flag for all counters
+//     Object.values(gameState.counterMap).forEach(counter => {
+//         counter.engaged = false;
+//     });
+//     return [];
+// }
 
-const executeMovementPhase = (gameState: GameState): ReplayMovementElement[] => {
-    console.log(`Executing movement phase for game ${gameState.id}`);
-    const replayMovementElements: ReplayMovementElement[] = [];
-    //const crewAndMonsterCounters = Object.values(gameState.counterMap).filter(counter => !isWeapon(counter));
-    const crewAndMonsterCounters = Object.values(gameState.counterMap);
-    crewAndMonsterCounters.forEach(counter => {
-        counter.engaged = false;
-    });
+// const executeMovementPhase = (gameState: GameState): ReplayMovementElement[] => {
+//     console.log(`Executing movement phase for game ${gameState.id}`);
+//     const replayMovementElements: ReplayMovementElement[] = [];
+//     //const crewAndMonsterCounters = Object.values(gameState.counterMap).filter(counter => !isWeapon(counter));
+//     const crewAndMonsterCounters = Object.values(gameState.counterMap);
+//     crewAndMonsterCounters.forEach(counter => {
+//         counter.engaged = false;
+//     });
 
     //process drop actions first
     // const countersWithDropActions = crewAndMonsterCounters.filter(counter => counter.actions.some(action => action.type === ActionType.DROP_WEAPON));
@@ -215,12 +223,12 @@ const executeMovementPhase = (gameState: GameState): ReplayMovementElement[] => 
     // });
 
     //process all actions but will basically ignore the drops/grabs since they have already been processed
-    let processedAction = true;
-    let index = 0;
-    let count = 0;
-    while (processedAction && count < 10) {
-        ++count;
-        processedAction = false;
+    // let processedAction = true;
+    // let index = 0;
+    // let count = 0;
+    // while (processedAction && count < 10) {
+    //     ++count;
+    //     processedAction = false;
         // console.log(`Processing action index ${index}`);
         // for (let i = 0; i < crewAndMonsterCounters.length; i++) {
         //     const counter = crewAndMonsterCounters[i];
@@ -277,9 +285,9 @@ const executeMovementPhase = (gameState: GameState): ReplayMovementElement[] => 
         //     shuffleArray(crewAndMonsterCounters);
         //     index++;
         // }
-    }
-    return replayMovementElements;
-}
+  //  }
+//     return replayMovementElements;
+// }
 
 //need function to determine spotted status of areas
 //will call before a move to coord and after in order to create delta of counters in the areas for the replay element. 

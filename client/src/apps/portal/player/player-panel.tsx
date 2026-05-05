@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import './player-panel.css';
 import { deleteData, getData, patchData } from '../../../api/api-utils';
-import { GameEntry, GameEntryPlayer, GameEntryTeam, PlayerType, Scenario } from '../../../shared/types/game-types';
+import { GameEntry, GameEntryPlayer, Scenario } from '../../../shared/types/game-types';
 import CreateGameForm from './create-game-form';
 import { ClientUser, getUser } from '../../../utils/user-client';
 

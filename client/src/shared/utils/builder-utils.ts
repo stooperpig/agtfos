@@ -9,7 +9,7 @@ export const createGameStateBuilder = (
     counterMap: {},
     players: [],
     scenarioId: '',
-    phase: Phase.MOVE,
+    phase: Phase.CREW_MOVE,
     nextCounterId: 1,
     stackMap: {},
     id,
@@ -24,6 +24,7 @@ export const createGameStateBuilder = (
     mapScale: 1,
     selectedCounterIds: [],
     monsterTurnStatus: PlayerTurnStatus.STARTED,
+    attackGroups: [],
     // weaponStateMap: {}
   };
 

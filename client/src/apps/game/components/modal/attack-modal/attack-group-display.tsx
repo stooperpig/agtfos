@@ -1,10 +1,11 @@
 import React from "react";
 import "./attack-group-display.css";
-import { AttackGroup, Counter, WeaponEffectType } from "../../../../../shared/types/game-types";
+import { AttackGroup, AttackGroupType, Counter, WeaponEffectType } from "../../../../../shared/types/game-types";
 import { useSelector } from "react-redux";
-import { RootState } from "../../../../../constants/store";
+import { RootState, useAppDispatch } from "../../../../../constants/store";
 import { isCrew, isMonster, isWeapon } from "../../../../../shared/utils/counter-utils";
 import { ScenarioData } from "../../../../../constants/game-constants";
+import { isAreaWeapon, isCollateralEffectWeapon, isMultiAreaWeapon } from "../../../utils/counter-utils";
 
 interface AttackGroupDisplayProps {
     attackGroup: AttackGroup
@@ -15,49 +16,69 @@ interface AttackGroupDisplayProps {
 }
 
 export const AttackGroupDisplay = ({ attackGroup, groupSelectClick, removeGroupClick, removeCounterClick, active }: AttackGroupDisplayProps) => {
+    const dispatch = useAppDispatch();
     const counterMap = useSelector((state: RootState) => state.counterMap);
 
-    const rightClickHandler = (e: React.MouseEvent, attackGroupId: string, counterId: string) => {
+    const leftClickHandler = (e: React.MouseEvent, attackGroupId: string, counterId: string) => {
         e.preventDefault();
+        if (attackGroup.type === AttackGroupType.AREA) {
+            const counter = attackGroup.targetCounterIds.find((id) => id === counterId);
+            if (counter) {
+                dispatch({ type: 'SET_STATUS_MESSAGE', payload: "You can not remove targets from an area attack group" });
+                return;
+            }
+        }
         removeCounterClick(attackGroupId, counterId);
     };
 
-    const isAreaWeapon = (counter: Counter) => {
-        return ScenarioData.weaponMap[counter.weaponType!].effectType === WeaponEffectType.AREA;
-    };
-
-    const containsAreaWeapon = [...attackGroup.attackingCounterIds, ...attackGroup.targetCounterIds].some((counterId: string) => {
+    const containsMultiAreaWeapon = [...attackGroup.attackingCounterIds, ...attackGroup.targetCounterIds].some((counterId: string) => {
         const counter = counterMap[counterId];
-        return isWeapon(counter) && isAreaWeapon(counter);
+        return isWeapon(counter) && isMultiAreaWeapon(counter);
+    });
+
+    const containsCollateralEffectWeapon = [...attackGroup.attackingCounterIds, ...attackGroup.targetCounterIds].some((counterId: string) => {
+        const counter = counterMap[counterId];
+        return isWeapon(counter) && isCollateralEffectWeapon(counter);
     });
 
     const getCounterName = (counter: Counter) => {
         if (isWeapon(counter)) {
             const ownerCounter = counterMap[counter.ownerCounterId!];
-            return `${ownerCounter.name} ${isAreaWeapon(counter) ? '⚠️' : ''}`;
+            return `${ownerCounter.name} ${isMultiAreaWeapon(counter) ? '⚠️' : ''} ${isCollateralEffectWeapon(counter) ? '☢️' : ''}`;
         } else {
             return counter.name || counter.type;
         }
     }
 
     const renderAreaWarning = () => {
-        if (!containsAreaWeapon) return null;
+        if (!containsMultiAreaWeapon) return null;
 
         return (
             <div className="area-warning">
-                <span>⚠️ Area weapon detected</span>
+                <span>⚠️ Multiple area weapon detected</span>
+            </div>
+        )
+    };
+
+    const renderCollateralEffectWarning = () => {
+        if (!containsCollateralEffectWeapon) return null;
+
+        return (
+            <div className="collateral-effect-warning">
+                <span>☢️ Collateral effect weapon detected</span>
             </div>
         )
     };
 
     return (
         <div key={attackGroup.id} className={`attack-group ${active ? 'active' : ''}`} onClick={() => groupSelectClick(attackGroup.id)}>
+            <div className="attack-group-title">{attackGroup.type === AttackGroupType.AREA ? 'Area Attack' : 'Single Target'}</div>
             <div className="group-counters">
                 <div className="group-counters-list">
                     {[...attackGroup.attackingCounterIds, ...attackGroup.targetCounterIds].map((counterId: string) => {
                         const counter = counterMap[counterId];
                         return (
-                            <div key={counterId} className="group-counter" onContextMenu={(e) => rightClickHandler(e, attackGroup.id, counterId)}>
+                            <div key={counterId} className="group-counter" onClick={(e) => leftClickHandler(e, attackGroup.id, counterId)}>
                                 <span className="group-counter-name">{getCounterName(counter)}</span><br />
                                 <img className="group-counter-image-large" src={`/images/${counter.imageName}.png`} />
                             </div>
@@ -65,6 +86,7 @@ export const AttackGroupDisplay = ({ attackGroup, groupSelectClick, removeGroupC
                     })}
                 </div>
                 {renderAreaWarning()}
+                {renderCollateralEffectWarning()}
             </div>
             <button
                 className="remove-group-x-btn"

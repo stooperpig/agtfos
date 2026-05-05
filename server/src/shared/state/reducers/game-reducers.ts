@@ -1,18 +1,21 @@
 import { AttackGroup, Counter, CounterType, GameState, Phase, PlayerTurnStatus } from "../../../shared/types/game-types";
 import {
-    Action, ActionAddCounterToAttackGroup, ActionCreateAttackGroup, ActionDeleteAttackGroup, ActionDeselectCounter, ActionDropWeapon, ActionGrabWeapon, ActionGrowMonster, ActionLayEgg, ActionMoveToCoord, ActionNextPhase, ActionPhaseComplete, ActionRefreshGame, ActionRemoveCounterFromAttackGroup, ActionSelectArea, ActionSelectCounter,
+    Action, ActionAddCountersToAttackGroup, ActionCreateAttackGroup, ActionDeleteAttackGroup, ActionDeselectCounter, ActionDropWeapon, ActionGrabWeapon, ActionGrowMonster, ActionLayEgg, ActionMoveToCoord, ActionNextPhase, ActionPhaseComplete, ActionRefreshGame, ActionRemoveCounterFromAttackGroup, ActionSelectArea, ActionSelectCounter,
     ActionSetStatusMessage, ActionType, ActionUpdateConnectedClientCount
 } from "../../types/action-types";
 import { isCrew } from "../../utils/counter-utils";
 import { randomUUID } from 'crypto';
 
 export const processCreateAttackGroup = (state: GameState, action: ActionCreateAttackGroup): void => {
-    const { areaId, attackGroupId } = action.payload;
+    const { areaId, type: attackGroupType, attackGroupId, attackingCounterIds, targetCounterIds } = action.payload;
     const attackGroup: AttackGroup = {
         id: attackGroupId,
         areaId,
-        targetCounterIds: [],
-        attackingCounterIds: [] 
+        type: attackGroupType,
+        targetCounterIds: targetCounterIds || [],
+        attackingCounterIds: attackingCounterIds || [],
+        goalDice: 0,
+        dice: 0
     };
 
     state.attackGroups.push(attackGroup);
@@ -32,14 +35,15 @@ export const processRemoveCounterFromAttackGroup = (state: GameState, action: Ac
     }
 }
 
-export const processAddCounterToAttackGroup = (state: GameState, action: ActionAddCounterToAttackGroup): void => {
-    const { attackGroupId, targetCounterId, attackingCounterId } = action.payload;
+export const processAddCounterToAttackGroup = (state: GameState, action: ActionAddCountersToAttackGroup): void => {
+    const { attackGroupId, targetCounterIds, attackingCounterIds } = action.payload;
     const attackGroup = state.attackGroups.find(group => group.id === attackGroupId);
     if (attackGroup) {
-        if (targetCounterId) {
-            attackGroup.targetCounterIds.push(targetCounterId);
-        } else if (attackingCounterId) {
-            attackGroup.attackingCounterIds.push(attackingCounterId);
+        if (targetCounterIds && targetCounterIds.length > 0) {
+            attackGroup.targetCounterIds.push(...targetCounterIds);
+        }
+        if (attackingCounterIds && attackingCounterIds.length > 0) {
+            attackGroup.attackingCounterIds.push(...attackingCounterIds);
         }
     }
 }
@@ -211,7 +215,7 @@ export const processPhaseComplete = (state: GameState, action: ActionPhaseComple
 }
 
 export const processNextPhase = (state: GameState, action: ActionNextPhase): void => {
-    const { phase } = action.payload;
+    const { phase, playerStatus } = action.payload;
 
     if (phase === Phase.GRAB_WEAPON) {
         state.turn += 1;
@@ -220,7 +224,7 @@ export const processNextPhase = (state: GameState, action: ActionNextPhase): voi
     state.phase = phase;
 
     state.players.forEach(player => {
-        player.turnStatus = PlayerTurnStatus.STARTED;
+        player.turnStatus = playerStatus;
     });
 }
 

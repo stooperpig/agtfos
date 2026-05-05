@@ -1,6 +1,6 @@
 import cloneDeep from "lodash.clonedeep";
 import { Action, ActionGrowMonster, ActionLayEgg, ActionMoveToCoord, ActionType } from "../shared/types/action-types";
-import { AttackGroup, Coord, Counter, CounterMap, CounterType, GameState, Phase, Scenario, StackMap } from "../shared/types/game-types";
+import { AttackGroup, AttackGroupType, Coord, Counter, CounterMap, CounterType, GameState, Phase, PlayerTurnStatus, Scenario, StackMap } from "../shared/types/game-types";
 import { isCrew, isMonster } from "../shared/utils/counter-utils";
 import { shuffleArray } from "../shared/utils/dice-utils";
 import { processGrowMonster, processLayEgg, processMoveToCoord } from "../shared/state/reducers/game-reducers";
@@ -9,6 +9,7 @@ import { DiceTableData } from "../types/server-types";
 // import { checkEngagement } from "../shared/utils/movement-utils";
 import { getMonsterImageName } from "../handlers/new-game-handler";
 import { getAdjacentAreas, getLosAreas, getShortestPath } from "../utils/map-utils";
+import { randomUUID } from "crypto";
 
 // function blockingSleep(ms: number) {
 //     const sab = new SharedArrayBuffer(4);
@@ -16,17 +17,17 @@ import { getAdjacentAreas, getLosAreas, getShortestPath } from "../utils/map-uti
 //     Atomics.wait(int32, 0, 0, ms);
 // }
 
-export const planMonsters = (data: any, postMessage: (data: any) => void): void => {
+export const monsterAttack = (data: any, postMessage: (data: any) => void): void => {
     try {
-        const diceTable = readDiceTable(.8);
+        //const diceTable = readDiceTable(.8);
 
         // //you can mutate the gameState directly since it only exists in this thread
-        // const gameState = data as GameState;
+        const gameState = data as GameState;
         // const scenario = readScenario(gameState.scenarioId);
 
         // console.log(`planMonsters: starting for game: ${data.id} phase: ${gameState.phase}`);
 
-        // resetCounters(gameState);
+        resetCounters(gameState);
 
         // //todo: eggs will not exist in the starting counterMap for replay??? need to handle this; they won't have actions but we need to represent them in the replay
         // //todo: ok ok,  all these grow/laying egg things are actions for the counter.
@@ -44,10 +45,16 @@ export const planMonsters = (data: any, postMessage: (data: any) => void): void 
         //         actionsMap[counterId] = counter.actions;
         //     }
         // });
+        //gameState.attackGroups = [];
+        gameState.phase = Phase.MONSTER_ATTACK_REPLAY;
+        gameState.players.forEach(player => {
+            player.turnStatus = PlayerTurnStatus.STARTED;
+        });
 
-        //postMessage({ status: "done", payload: { gameId: gameState.id, actionsMap, nextCounterId: gameState.nextCounterId } });
+        postMessage({ status: "notifyClient", payload: { gameId: gameState.id, gameState } });
+        postMessage({ status: "done", payload: { gameId: gameState.id } });
     } catch (error) {
-        console.error(`planMonsters: error for game: ${data.id}`, error);
+        console.error(`monsterPhase: error for game: ${data.id}`, error);
         postMessage({ status: "error", payload: { gameId: data.id, error } });
     }
 }
@@ -56,8 +63,11 @@ const resetCounters = (gameState: GameState) => {
     console.log(`Resetting counters for game ${gameState.id}`);
     const counters = Object.values(gameState.counterMap);
     counters.forEach(counter => {
-        //counter.actions = [];
-        counter.usedMovementAllowance = 0;
+        if (isMonster(counter)) {
+            counter.usedMovementAllowance = 0;
+            counter.stunned = false;
+            counter.engaged = false;
+        }
     });
 }
 
@@ -88,11 +98,14 @@ const planMovementPhase = (gameState: GameState, scenario: Scenario, diceTable: 
         console.log(`Crew ${crewScore.crew.id} has score ${crewScore.score} in area ${crewScore.crew.areaId}`);
         const areaId = crewScore.crew.areaId!;
 
-        const attackGroup = {
-            targetCounterId: crewScore.crew.id,
+        const attackGroup: AttackGroup = {
+            id: randomUUID(),
+            areaId: areaId,
+            type: AttackGroupType.SINGLE_TARGET,
+            targetCounterIds: [crewScore.crew.id],
             attackingCounterIds: [],
             dice: 0,
-            targetDice: diceTable[crewScore.crew.constitution]
+            goalDice: diceTable[crewScore.crew.constitution]
         };
 
         //look in same area (range 0)
@@ -100,14 +113,14 @@ const planMovementPhase = (gameState: GameState, scenario: Scenario, diceTable: 
 
         //look in adjacent areas (adj)
         const adjAreas = getAdjacentAreas(areaId, scenario.board.areaDefinitionMap);
-        for (let i = 0; i < adjAreas.length && attackGroup.targetDice > attackGroup.dice; ++i) {
+        for (let i = 0; i < adjAreas.length && attackGroup.goalDice > attackGroup.dice; ++i) {
             const adjAreaId = adjAreas[i];
             updateAttackGroup(attackGroup, adjAreaId, gameState.counterMap, gameState.stackMap, 1);
         };
 
         //look at los areas
         const losAreas = getLosAreas(areaId, scenario.board.areaDefinitionMap);
-        for (let i = 0; i < losAreas.length && attackGroup.targetDice > attackGroup.dice; ++i) {
+        for (let i = 0; i < losAreas.length && attackGroup.goalDice > attackGroup.dice; ++i) {
             const losAreaId = losAreas[i];
             updateAttackGroup(attackGroup, losAreaId, gameState.counterMap, gameState.stackMap, 2);
         };
@@ -200,7 +213,8 @@ const moveMonsterToArea = (monster: Counter, areaId: string, scenario: Scenario)
                     fromCoords: [fromCoord],
                     toAreaId,
                     toCoord,
-                    movementCost: 1
+                    movementCost: 1,
+                    engaged: false
                 }
             };
             //monster.actions.push(action);
@@ -231,7 +245,8 @@ const randomMoveMonster = (monster: Counter, fromAreaId: string, fromCoord: Coor
                 fromCoords: [fromCoord],
                 toAreaId,
                 toCoord,
-                movementCost: 1
+                movementCost: 1,
+                engaged: false
             }
         };
         //monster.actions.push(action);
@@ -243,7 +258,7 @@ const randomMoveMonster = (monster: Counter, fromAreaId: string, fromCoord: Coor
 
 const moveAttackingMonsters = (attackGroup: AttackGroup, areaId: string, gameState: GameState, scenario: Scenario) => {
     attackGroup.attackingCounterIds.forEach(counterId => {
-        console.log(`Monster ${counterId} is attacking crew ${attackGroup.targetCounterId}`);
+        console.log(`Monster ${counterId} is attacking crew ${attackGroup.targetCounterIds}`);
         const monsterCounter = gameState.counterMap[counterId];
         const monsterAreaId = monsterCounter.areaId;
         moveMonsterToArea(monsterCounter, areaId, scenario);
@@ -270,7 +285,7 @@ const updateAttackGroup = (attackGroup: AttackGroup, areaId: string, counterMap:
         // Add monsters to the attack group to get target dice number. 
         for (let i = 0; i < monsters.length; ++i) {
             const monster = monsters[i];
-            if (attackGroup.targetDice <= attackGroup.dice) {
+            if (attackGroup.goalDice <= attackGroup.dice) {
                 break;
             }
 

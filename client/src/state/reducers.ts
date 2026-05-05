@@ -63,7 +63,7 @@ export const rootReducer = (state = InitialGameState, action: Action): GameState
             return reduce(state, action, processCreateAttackGroup);
         case ActionType.REMOVE_COUNTER_FROM_ATTACK_GROUP:
             return reduce(state, action, processRemoveCounterFromAttackGroup);
-        case ActionType.ADD_COUNTER_TO_ATTACK_GROUP:
+        case ActionType.ADD_COUNTERS_TO_ATTACK_GROUP:
             return reduce(state, action, processAddCounterToAttackGroup);
         case ActionType.DELETE_ATTACK_GROUP:
             return reduce(state, action, processDeleteAttackGroup);

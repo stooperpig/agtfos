@@ -8,18 +8,21 @@
       "count": 3,
       "imageName": "BottleOfAcid",
       "effectType": "SINGLE_TARGET",
+      "targetType": "MONSTER_ONLY",
       "range": 1
     },
     "CANNISTER_OF_ZGWORTZ": {
       "count": 3,
       "imageName": "CannisterOfZgwortz",
       "effectType": "SINGLE_TARGET",
+      "targetType": "MONSTER_ONLY",
       "range": 1
     },
     "COMMUNICATIONS_BEAMER": {
       "count": 2,
       "imageName": "CommBeamer",
       "effectType": "AREA",
+      "targetType": "MONSTER_ONLY",
       "range": 5
     },
     "ELECTRIC_FENCE": {
@@ -32,48 +35,56 @@
       "count": 2,
       "imageName": "FireExtinguisher",
       "effectType": "AREA",
+      "targetType": "MONSTER_ONLY",
       "range": 0
     },
     "GAS_GRENADE": {
       "count": 3,
       "imageName": "GasGrenade",
       "effectType": "MULTIPLE_AREAS",
+      "targetType": "ALL",
       "range": 1
     },
     "HYPODERMIC": {
       "count": 2,
       "imageName": "Hypodermic",
       "effectType": "SINGLE_TARGET",
+      "targetType": "MONSTER_ONLY",
       "range": 0
     },
     "KNIFE": {
       "count": 3,
       "imageName": "Knife",
       "effectType": "SINGLE_TARGET",
+      "targetType": "MONSTER_ONLY",
       "range": 1
     },
     "POOL_STICK": {
       "count": 2,
       "imageName": "PoolStick",
       "effectType": "SINGLE_TARGET",
+      "targetType": "MONSTER_ONLY",
       "range": 0
     },
     "CAN_OF_ROCKET_FUEL": {
       "count": 3,
       "imageName": "RocketFuel",
       "effectType": "MULTIPLE_AREAS",
+      "targetType": "ALL",
       "range": 1
     },
     "STUN_PISTOL": {
       "count": 2,
       "imageName": "StunPistol",
       "effectType": "SINGLE_TARGET",
+      "targetType": "MONSTER_ONLY",
       "range": 5
     },
     "WELDING_TORCH": {
       "count": 2,
       "imageName": "WeldingTorch",
       "effectType": "SINGLE_TARGET",
+      "targetType": "MONSTER_ONLY",
       "range": 0
     }
   },

@@ -9,6 +9,20 @@ import GamePage from './pages/game-page';
 import PlayerPage from './pages/player-page';
 import AdminPage from './pages/admin-page';
 
+// const origWarn = console.warn;
+
+// console.warn = (...args) => {
+//   if (
+//     typeof args[0] === 'string' &&
+//     args[0].includes('Selector unknown returned a different result')
+//   ) {
+//     debugger; // pause in devtools
+//     console.trace('Selector warning stack');
+//   }
+
+//   origWarn(...args);
+// };
+
 const root = createRoot(document.getElementById('root') as HTMLElement);
 root.render(
     <Provider store={store}>

@@ -2,7 +2,7 @@ import { GameState, Phase, PlayerColor, PlayerTurnStatus, GameMode } from "../sh
 
 export const InitialGameState: GameState = {
     id: "0",
-    phase: Phase.MOVE,
+    phase: Phase.GRAB_WEAPON,
     currentPlayerId: "0",
     players: [{
         active: true,

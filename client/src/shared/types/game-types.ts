@@ -145,7 +145,7 @@ export interface GameState {
     statusMessage?: string
     turn: number
     weaponEffectMap: {
-        [key: string]: WeaponEffect
+        [key: string]: WeaponEffectEntry
     }
     mapScale: number
     selectedCounterIds: string[]
@@ -345,6 +345,7 @@ export interface Scenario {
             effectType: WeaponEffectType
             range: number
             targetType: WeaponTargetType
+            reuseable: boolean
         }
     }
 }
@@ -384,13 +385,20 @@ export enum WeaponTargetType {
     ALL = "ALL"
 }
 
+export interface WeaponEffectEntry {
+    effect: WeaponEffect
+    discovered: boolean
+}
+
 export enum WeaponEffect {
     FIVE_DICE_TO_KILL = "FIVE_DICE_TO_KILL",
     FIVE_DICE_TO_STUN = "FIVE_DICE_TO_STUN",
+    FOUR_DICE_TO_KILL = "FOUR_DICE_TO_KILL",
+    THREE_DICE_TO_KILL = "THREE_DICE_TO_KILL",
     NO_EFFECT = "NO_EFFECT",
     GROW = "GROW",
     SHRINK = "SHRINK",
-    ONE_DIE_FRAGMENTS = "ONE_DIE_FRAGMENTS"
+    ONE_DIE_FRAGMENTS = "ONE_DICE_FRAGMENTS"
 }
 
 export enum WeaponType {

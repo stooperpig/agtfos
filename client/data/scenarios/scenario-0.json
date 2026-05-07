@@ -9,83 +9,95 @@
       "imageName": "BottleOfAcid",
       "effectType": "SINGLE_TARGET",
       "targetType": "MONSTER_ONLY",
-      "range": 1
+      "range": 1,
+      "reusable": false
     },
     "CANNISTER_OF_ZGWORTZ": {
       "count": 3,
       "imageName": "CannisterOfZgwortz",
       "effectType": "SINGLE_TARGET",
       "targetType": "MONSTER_ONLY",
-      "range": 1
+      "range": 1,
+      "reusable": false
     },
     "COMMUNICATIONS_BEAMER": {
       "count": 2,
       "imageName": "CommBeamer",
       "effectType": "AREA",
       "targetType": "MONSTER_ONLY",
-      "range": 5
+      "range": 5,
+      "reusable": true
     },
     "ELECTRIC_FENCE": {
       "count": 2,
       "imageName": "ElectricFence",
       "effectType": "AREA",
-      "range": 0
+      "range": 0,
+      "reusable": false
     },
     "FIRE_EXTINGUSHER": {
       "count": 2,
       "imageName": "FireExtinguisher",
       "effectType": "AREA",
       "targetType": "MONSTER_ONLY",
-      "range": 0
+      "range": 0,
+      "reusable": true
     },
     "GAS_GRENADE": {
       "count": 3,
       "imageName": "GasGrenade",
       "effectType": "MULTIPLE_AREAS",
       "targetType": "ALL",
-      "range": 1
+      "range": 1,
+      "reusable": false
     },
     "HYPODERMIC": {
       "count": 2,
       "imageName": "Hypodermic",
       "effectType": "SINGLE_TARGET",
       "targetType": "MONSTER_ONLY",
-      "range": 0
+      "range": 0,
+      "reusable": true
     },
     "KNIFE": {
       "count": 3,
       "imageName": "Knife",
       "effectType": "SINGLE_TARGET",
       "targetType": "MONSTER_ONLY",
-      "range": 1
+      "range": 1,
+      "reusable": true
     },
     "POOL_STICK": {
       "count": 2,
       "imageName": "PoolStick",
       "effectType": "SINGLE_TARGET",
       "targetType": "MONSTER_ONLY",
-      "range": 0
+      "range": 0,
+      "reusable": true
     },
     "CAN_OF_ROCKET_FUEL": {
       "count": 3,
       "imageName": "RocketFuel",
       "effectType": "MULTIPLE_AREAS",
       "targetType": "ALL",
-      "range": 1
+      "range": 1,
+      "reusable": false
     },
     "STUN_PISTOL": {
       "count": 2,
       "imageName": "StunPistol",
       "effectType": "SINGLE_TARGET",
       "targetType": "MONSTER_ONLY",
-      "range": 5
+      "range": 5,
+      "reusable": true
     },
     "WELDING_TORCH": {
       "count": 2,
       "imageName": "WeldingTorch",
       "effectType": "SINGLE_TARGET",
       "targetType": "MONSTER_ONLY",
-      "range": 0
+      "range": 0,
+      "reusable": true
     }
   },
   "board": {
@@ -1150,7 +1162,9 @@
           {
             "type": "OPEN",
             "areaId": "42",
-            "losAreaIds": ["43"]
+            "losAreaIds": [
+              "43"
+            ]
           }
         ],
         "polygon": [
@@ -2185,7 +2199,9 @@
           {
             "type": "OPEN",
             "areaId": "42",
-            "losAreaIds": ["22"]
+            "losAreaIds": [
+              "22"
+            ]
           },
           {
             "type": "DOOR",
@@ -2913,6 +2929,30 @@
     },
     "Fragment-7": {
       "src": "/images/Fragment-7.png"
+    },
+    "FIVE_DICE_TO_KILL": {
+      "src": "/images/5dk.png"
+    },
+    "FIVE_DICE_TO_STUN": {
+      "src": "/images/5ds.png"
+    },
+    "FOUR_DICE_TO_KILL": {
+      "src": "/images/4dk.png"
+    },
+    "THREE_DICE_TO_KILL": {
+      "src": "/images/3dk.png"
+    },
+    "NO_EFFECT": {
+      "src": "/images/NoEffect.png"
+    },
+    "GROW": {
+      "src": "/images/grow.png"
+    },
+    "SHRINK": {
+      "src": "/images/Shrink.png"
+    },
+    "ONE_DICE_FRAGMENTS": {
+      "src": "/images/1df.png"
     }
   }
 }

@@ -2,7 +2,7 @@ import './map.css';
 import React, { createRef, useRef } from 'react'
 import { useAppDispatch, useAppSelector } from '../../../../constants/store';
 import { ImageData, ScenarioData } from '../../../../constants/game-constants';
-import { Coord, CounterMap, Player, Polygon, Stack, StackMap, AreaDefinition, Aperture, AreaDefinitionMap, Phase, Counter, Animation } from '../../../../shared/types/game-types';
+import { Coord, CounterMap, Player, Polygon, Stack, StackMap, AreaDefinition, Aperture, AreaDefinitionMap, Phase, Counter, Animation, WeaponType, WeaponEffectEntry, WeaponEffect } from '../../../../shared/types/game-types';
 import { getMovementCost, pointInPolygon } from '../../utils/map-utils';
 import { sortCounterIdsBySelected, validateMove } from './utils';
 import { sendMessage, socketId } from '../../../../api/web-socket';
@@ -10,8 +10,87 @@ import { putData } from '../../../../api/api-utils';
 import { ActionMoveToCoord, ActionType } from '../../../../shared/types/action-types';
 import { checkEngagement } from '../../../../shared/utils/movement-utils';
 
+// const weaponsDisplayTable: { [key: string]: Coord } = {
+//     [WeaponType.BOTTLE_OF_ACID]: { x: 0, y: 0 },
+//     [WeaponType.CANNISTER_OF_ZGWORTZ]: { x: 0, y: 0 },
+//     [WeaponType.COMMUNICATIONS_BEAMER]: { x: 0, y: 0 },
+//     [WeaponType.ELECTRIC_FENCE]: { x: 0, y: 0 },
+//     [WeaponType.FIRE_EXTINGUSHER]: { x: 0, y: 0 },
+//     [WeaponType.GAS_GRENADE]: { x: 0, y: 0 },
+//     [WeaponType.HYPODERMIC]: { x: 0, y: 0 },
+//     [WeaponType.KNIFE]: { x: 0, y: 0 },
+//     [WeaponType.POOL_STICK]: { x: 0, y: 0 },
+//     [WeaponType.CAN_OF_ROCKET_FUEL]: { x: 0, y: 0 },
+//     [WeaponType.STUN_PISTOL]: { x: 0, y: 0 },
+//     [WeaponType.WELDING_TORCH]: { x: 0, y: 0 },
+// }
+
+const weaponsDisplayTable: { [key: string]: Coord } = {
+    [WeaponType.BOTTLE_OF_ACID]: {
+        "x": 3069,
+        "y": 444
+    },
+    [WeaponType.CANNISTER_OF_ZGWORTZ]: {
+        "x": 3068,
+        "y": 537
+    },
+    [WeaponType.COMMUNICATIONS_BEAMER]: {
+        "x": 3067,
+        "y": 630
+    },
+    [WeaponType.ELECTRIC_FENCE]: {
+        "x": 3066,
+        "y": 723
+    },
+    [WeaponType.FIRE_EXTINGUSHER]: {
+        "x": 3065,
+        "y": 816
+    },
+    [WeaponType.GAS_GRENADE]: {
+        "x": 3064,
+        "y": 909
+    },
+    [WeaponType.HYPODERMIC]: {
+        "x": 3063,
+        "y": 1002
+    },
+    [WeaponType.KNIFE]: {
+        "x": 3062,
+        "y": 1095
+    },
+    [WeaponType.POOL_STICK]: {
+        "x": 3061,
+        "y": 1188
+    },
+    [WeaponType.CAN_OF_ROCKET_FUEL]: {
+        "x": 3060,
+        "y": 1281
+    },
+    [WeaponType.STUN_PISTOL]: {
+        "x": 3059,
+        "y": 1374
+    },
+    [WeaponType.WELDING_TORCH]: {
+        "x": 3058,
+        "y": 1467
+    }
+}
+
+// const buildWeaponDisplay = () => {
+//     console.log('building weapon display');
+//     const startX = 3069
+//     const startY = 397 + 47;
+//     const spacing = 490 - 397;
+//     const values = Object.values(weaponsDisplayTable);
+//     values.forEach((coord, index) => {
+//         coord.x = startX - index;
+//         coord.y = startY + index * spacing;
+//         console.log('setting weapon display coord', coord);
+//     });
+// }
+
 const updateCanvas = (canvas: HTMLCanvasElement, scale: number, currentAreaId: string | undefined, stackMap: StackMap, counterMap: CounterMap,
-    areaDefinitionMap: AreaDefinitionMap, selectedCounterIds: string[], animation?: Animation) => {
+    areaDefinitionMap: AreaDefinitionMap, weaponsEffectMap: { [key: string]: WeaponEffectEntry }, selectedCounterIds: string[], animation?: Animation) => {
     const context: CanvasRenderingContext2D | null = canvas ? canvas.getContext('2d') : null;
     if (context == null) {
         console.log("context undefined");
@@ -49,6 +128,39 @@ const updateCanvas = (canvas: HTMLCanvasElement, scale: number, currentAreaId: s
                 renderStack(context, scale, counterMap, stack, selectedCounterIds, animation)
             }
         });
+    }
+
+    renderWeaponsDisplayTable(context, weaponsDisplayTable, weaponsEffectMap, scale);
+}
+
+const renderWeaponsDisplayTable = (context: any, weaponsDisplayTable: { [key: string]: Coord }, weaponsEffectMap: { [key: string]: WeaponEffectEntry }, scale: number) => {
+    console.log('rendering weapons display table');
+    console.log('weaponsDisplayTable', weaponsDisplayTable);
+    const keys = Object.keys(weaponsEffectMap);
+    keys.forEach(key => {
+        const entry = weaponsEffectMap[key];
+        if (entry.discovered) {
+            const coord = weaponsDisplayTable[key];
+            if (coord) {
+                renderWeaponsDisplayEntry(context, coord, entry.effect, scale);
+            } else {
+                console.log('no coord for effect', entry.effect);
+            }
+        }
+    });
+}
+
+const renderWeaponsDisplayEntry = (context: any, coord: Coord, effect: WeaponEffect, scale: number) => {
+    const image = ImageData[effect]?.image;
+    if (image) {
+        const counterWidth = image.naturalWidth * scale * 0.9;
+        const counterHeight = image.naturalHeight * scale * 0.9;
+        const x = coord!.x * scale - (counterWidth / 2);
+        const y = coord!.y * scale - (counterHeight / 2);
+        console.log('drawing weapon effect', effect, x, y, counterWidth, counterHeight);
+        context.drawImage(image, x, y, counterWidth, counterHeight);
+    } else {
+        console.log('no image for effect', effect);
     }
 }
 
@@ -203,12 +315,14 @@ const Map = () => {
     const gameId = useAppSelector(state => state.id);
     const replay = useAppSelector(state => state.replay);
     const animation = useAppSelector(state => state.replay?.activeState?.animation);
+    const weaponEffectMap = useAppSelector(state => state.weaponEffectMap);
 
     let player: Player | undefined = undefined;
 
     const mainCanvasRef = useRef<HTMLCanvasElement>(null);
     const animationCanvasRef = useRef<HTMLCanvasElement>(null);
     //let clickTimer: NodeJS.Timeout | undefined = undefined;
+    //buildWeaponDisplay();
 
     React.useEffect(() => {
         console.log('animation', animation);
@@ -230,14 +344,14 @@ const Map = () => {
         if (mainCanvasRef.current) {
             const canvas: HTMLCanvasElement = mainCanvasRef.current;
             if (replay && replay.show && replay.activeState) {
-                updateCanvas(canvas, mapScale, currentAreaId, replay.activeState.stackMap, replay.activeState.counterMap, areaDefinitionMap, selectedCounterIds, replay.activeState.animation);
+                updateCanvas(canvas, mapScale, currentAreaId, replay.activeState.stackMap, replay.activeState.counterMap, areaDefinitionMap, weaponEffectMap, selectedCounterIds, replay.activeState.animation);
                 return;
-            } else {        
+            } else {
                 console.log('map useEffect - normal');
-                updateCanvas(canvas, mapScale, currentAreaId, stackMap, counterMap, areaDefinitionMap, selectedCounterIds);
+                updateCanvas(canvas, mapScale, currentAreaId, stackMap, counterMap, areaDefinitionMap, weaponEffectMap, selectedCounterIds);
             }
         }
-    }, [mainCanvasRef, counterMap, currentAreaId, mapScale, stackMap, areaDefinitionMap, selectedCounterIds, replay]);
+    }, [mainCanvasRef, counterMap, currentAreaId, mapScale, stackMap, areaDefinitionMap, selectedCounterIds, replay, weaponEffectMap]);
 
     function startLoop(canvas: HTMLCanvasElement) {
         console.log('startLoop');
@@ -272,7 +386,7 @@ const Map = () => {
 
         const newArea = getArea(areaDefinitionMap, { x: posX / scale, y: posY / scale });
 
-        if (phase !== Phase.MOVE) {
+        if (phase !== Phase.CREW_MOVE) {
             dispatch({ type: ActionType.SET_STATUS_MESSAGE, payload: 'It is not the movement phase' });
             return;
         }

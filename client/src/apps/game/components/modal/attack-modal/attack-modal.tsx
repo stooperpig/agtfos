@@ -24,7 +24,7 @@ export const AttackModal = (props: PropTypes) => {
     const dispatch = useAppDispatch();
     const gameId = useAppSelector((state: RootState) => state.id);
     const counterMap = useAppSelector((state: RootState) => state.counterMap);
-    const allAttackGroups = useAppSelector((state: RootState) => state.attackGroups ?? []);
+    const allAttackGroups = useAppSelector((state: RootState) => state.attackGroups) ?? [];
     const [activeGroupId, setActiveGroupId] = useState<string | undefined>(undefined);
 
     const attackGroups = allAttackGroups.filter(attackGroup => attackGroup.areaId === props.areaId);

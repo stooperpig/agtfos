@@ -55,15 +55,15 @@ export default function ReplayControls() {
 
             <button
                 onClick={handleForward}
-                disabled={!replayState || replayState?.index >= (phase === Phase.MOVE ? replayState?.replayElements.attackElements.length - 1 : replayState?.replayElements.movementElements?.length - 1)}
+                disabled={!replayState || replayState?.index >= (phase === Phase.CREW_MOVE ? replayState?.replayElements.attackElements.length - 1 : replayState?.replayElements.movementElements?.length - 1)}
             >
                 Step ▶
             </button>
 
-            <button onClick={handleEnd} disabled={!replayState || replayState?.index >= (phase === Phase.MOVE ? replayState?.replayElements.attackElements.length - 1 : replayState?.replayElements.movementElements?.length - 1)}>⏭ End</button>
+            <button onClick={handleEnd} disabled={!replayState || replayState?.index >= (phase === Phase.CREW_MOVE ? replayState?.replayElements.attackElements.length - 1 : replayState?.replayElements.movementElements?.length - 1)}>⏭ End</button>
 
             <span>
-                {replayState ? replayState?.index + 1 : 0} / {phase === Phase.MOVE ? replayState?.replayElements.attackElements.length : replayState?.replayElements.movementElements?.length ?? 0}
+                {replayState ? replayState?.index + 1 : 0} / {phase === Phase.CREW_MOVE ? replayState?.replayElements.attackElements.length : replayState?.replayElements.movementElements?.length ?? 0}
             </span>
 
             <ReplayRunner />

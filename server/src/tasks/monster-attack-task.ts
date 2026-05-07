@@ -163,9 +163,9 @@ const planMovementPhase = (gameState: GameState, scenario: Scenario, diceTable: 
 const moveMonsterTowardsCrew = (monster: Counter, areaIds: string[], fromAreaId: string, fromCoord: Coord, scenario: Scenario, counterMap: CounterMap, stackMap: StackMap): boolean => {
     console.log(`Moving monster ${monster.id} towards crew`);
     let done = false;
-    shuffleArray(areaIds);
-    for (let i = 0; i < areaIds.length && !done; ++i) {
-        const areaId = areaIds[i];
+    const shuffledAreaIds = shuffleArray(areaIds);
+    for (let i = 0; i < shuffledAreaIds.length && !done; ++i) {
+        const areaId = shuffledAreaIds[i];
         const adjArea = scenario.board.areaDefinitionMap[areaId];
         const stack = stackMap[areaId];
         if (stack === undefined) {
@@ -317,9 +317,9 @@ const addEggs = (gameState: GameState, addCount: number, scenario: Scenario, sta
     const effectCounters = Object.values(gameState.counterMap).filter(counter => counter.type === CounterType.ADULT);
     const monsterTypeData = scenario.monsterSettings.monsterPropertyMap[CounterType.EGG];
     console.log(`Effect counters: ${effectCounters.length}`);
-    shuffleArray(effectCounters);
-    for (let i = 0; i < effectCounters.length && i < addCount; i++) {
-        const counter = effectCounters[i];
+    const shuffledEffectedCounters = shuffleArray(effectCounters);
+    for (let i = 0; i < shuffledEffectedCounters.length && i < addCount; i++) {
+        const counter = shuffledEffectedCounters[i];
         const id = startingId++;
         console.log(`Adding EGG counter id ${id} to stack ${counter.areaId}`);
         const action: ActionLayEgg = {
@@ -347,24 +347,23 @@ const growType = (gameState: GameState, currentTypes: CounterType[], nextType: C
     const effectCounters = Object.values(gameState.counterMap).filter(counter => currentTypes.includes(counter.type));
     const monsterTypeData = scenario.monsterSettings.monsterPropertyMap[nextType];
     console.log(`Effect counters: ${effectCounters.length}`);
-    shuffleArray(effectCounters);
-    for (let i = 0; i < effectCounters.length && i < growCount; i++) {
-        console.log(`Growing counter ${effectCounters[i].id} at ${effectCounters[i].areaId} from ${effectCounters[i].type} to ${nextType}`);
+    const shuffledEffectedCounters = shuffleArray(effectCounters);
+    for (let i = 0; i < shuffledEffectedCounters.length && i < growCount; i++) {
+        console.log(`Growing counter ${shuffledEffectedCounters[i].id} at ${shuffledEffectedCounters[i].areaId} from ${shuffledEffectedCounters[i].type} to ${nextType}`);
         const action: ActionGrowMonster = {
             type: ActionType.GROW_MONSTER,
             payload: {
-                counterId: effectCounters[i].id,
-                fromAreaId: effectCounters[i].areaId!,
-                fromCoord: effectCounters[i].coord!,
+                counterId: shuffledEffectedCounters[i].id,
+                fromAreaId: shuffledEffectedCounters[i].areaId!,
+                fromCoord: shuffledEffectedCounters[i].coord!,
                 nextType: nextType,
                 movementAllowance: monsterTypeData.movementAllowance,
                 attackDice: monsterTypeData.attackDice,
                 constitution: monsterTypeData.constitution,
-                imageName: getMonsterImageName(parseInt(effectCounters[i].id), nextType, scenario.monsterSettings.monsterImageCountMap[nextType])
+                imageName: getMonsterImageName(parseInt(shuffledEffectedCounters[i].id), nextType, scenario.monsterSettings.monsterImageCountMap[nextType])
             }
         };
         processGrowMonster(gameState, action);
-        //effectCounters[i].actions.push(action);
     }
 }
 

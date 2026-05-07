@@ -4,6 +4,14 @@ export const roll6SidedDie = (): number => {
     return Math.floor(Math.random() * 6) + 1;
 }
 
+export const rollX6SidedDie = (x: number): number => {
+    let total = 0;
+    for (let i = 0; i < x; i++) {
+        total += roll6SidedDie();
+    }
+    return total;
+}
+
 export const rollXSidedDie = (x: number): number => {
     return Math.floor(Math.random() * x) + 1;
 }
@@ -11,6 +19,10 @@ export const rollXSidedDie = (x: number): number => {
 export const getRandomIndex = (max: number): number => {
     return Math.floor(Math.random() * max);
 }
+
+// export const randomNumber = (max: number) => {
+//     return Math.floor(Math.random() * max) + 1;
+// }
 
 export const getRandomIntInclusive = (min: number, max: number): number => {
     min = Math.ceil(min);

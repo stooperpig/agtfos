@@ -1,5 +1,6 @@
-import { Counter, CounterType, GameMode, GameState, NewGamePlayer, Phase, Player, PlayerTurnStatus, Replay, ReplayState, Scenario, WeaponType } from "../shared/types/game-types";
+import { Counter, CounterType, GameMode, GameState, NewGamePlayer, Phase, Player, PlayerTurnStatus, Replay, ReplayState, Scenario, WeaponEffect, WeaponType } from "../shared/types/game-types";
 import { isCrew, isMonster, isWeapon } from "../shared/utils/counter-utils";
+import { getRandomIndex, shuffleArray } from "../shared/utils/dice-utils";
 
 export const createReplay = (gameState: GameState): Replay => {
     return {
@@ -63,8 +64,38 @@ export const createNewGame = (newPlayers: NewGamePlayer[], scenario: Scenario, d
 
     generateWeaponCounters(game, scenario);
     placeWeapons(game, scenario);
+    createWeaponEffectsMap(game, scenario);
 
     return game;
+}
+
+const weaponEffectChits: WeaponEffect[] = [
+    WeaponEffect.FIVE_DICE_TO_KILL,
+    WeaponEffect.FIVE_DICE_TO_STUN,
+    WeaponEffect.FIVE_DICE_TO_STUN,
+    WeaponEffect.FOUR_DICE_TO_KILL,
+    WeaponEffect.FOUR_DICE_TO_KILL,
+    WeaponEffect.THREE_DICE_TO_KILL,
+    WeaponEffect.THREE_DICE_TO_KILL,
+    WeaponEffect.NO_EFFECT,
+    WeaponEffect.NO_EFFECT,
+    WeaponEffect.GROW,
+    WeaponEffect.SHRINK,
+    WeaponEffect.ONE_DIE_FRAGMENTS,
+    WeaponEffect.ONE_DIE_FRAGMENTS,
+    WeaponEffect.ONE_DIE_FRAGMENTS,
+    WeaponEffect.ONE_DIE_FRAGMENTS
+];
+
+export const createWeaponEffectsMap = (gameState: GameState, scenario: Scenario) => {
+    const shuffledWeaponEffectChits = shuffleArray(weaponEffectChits);
+    const entries = Object.entries(scenario.weaponMap);
+    entries.forEach(([weaponType, weaponData]) => {
+        gameState.weaponEffectMap[weaponType] = {
+            effect: shuffledWeaponEffectChits.pop()!,
+            discovered: true
+        }
+    });
 }
 
 export const generateWeaponCounters = (game: GameState, scenario: Scenario) => {
@@ -100,7 +131,7 @@ export const placeWeapons = (game: GameState, scenario: Scenario) => {
     weapons.forEach(counter => {
         const possibleArea = areas.filter(area => area.weaponStacks.some(weaponStack => weaponStack.type === counter.weaponType));
         if (possibleArea.length > 0) {
-            const area = possibleArea[randomNumber(possibleArea.length) - 1];
+            const area = possibleArea[getRandomIndex(possibleArea.length)];
             const weaponStack = area.weaponStacks.find(weaponStack => weaponStack.type === counter.weaponType);
             if (!weaponStack) {
                 return;
@@ -135,7 +166,7 @@ export const placeCrew = (game: GameState, scenario: Scenario) => {
         const scenarioCrew = scenario.crew.find(scenarioCrew => scenarioCrew.name === counter.name);
         if (scenarioCrew) {
             const areaCount = scenarioCrew.startingAreaIds.length;
-            const areaIndex = randomNumber(areaCount) - 1;
+            const areaIndex = getRandomIndex(areaCount);
             const areaId = scenarioCrew.startingAreaIds[areaIndex];
             const area = scenario.board.areaDefinitionMap[areaId];
             counter.areaId = areaId;
@@ -178,7 +209,7 @@ export const generateCrewCounters = (game: GameState, scenario: Scenario) => {
 
 export const generateMonsterCounters = (game: GameState, scenario: Scenario) => {
     const length = scenario.monsterSettings.startingCounts.length;
-    const index = randomNumber(length) - 1;
+    const index = getRandomIndex(length);
     const startingCounts = scenario.monsterSettings.startingCounts[index];
     let monsterTypeData = scenario.monsterSettings.monsterPropertyMap[CounterType.ADULT];
     for (let i = 0; i < startingCounts.adults; i++) {
@@ -201,7 +232,7 @@ export const generateMonsterCounters = (game: GameState, scenario: Scenario) => 
         }
         game.counterMap[counter.id] = counter;
     }
-    monsterTypeData = scenario.monsterSettings.monsterPropertyMap[CounterType.EGG];    
+    monsterTypeData = scenario.monsterSettings.monsterPropertyMap[CounterType.EGG];
     for (let i = 0; i < startingCounts.eggs; i++) {
         const id = game.nextCounterId++;
         const counter: Counter = {
@@ -248,7 +279,7 @@ export const generateMonsterCounters = (game: GameState, scenario: Scenario) => 
 export const placeMonsters = (game: GameState, scenario: Scenario) => {
     const monsters = Object.values(game.counterMap).filter(counter => isMonster(counter));
     monsters.forEach(counter => {
-        const areaId = scenario.monsterSettings.startingMonsterAreaIds[randomNumber(scenario.monsterSettings.startingMonsterAreaIds.length) - 1];
+        const areaId = scenario.monsterSettings.startingMonsterAreaIds[getRandomIndex(scenario.monsterSettings.startingMonsterAreaIds.length)];
         const area = scenario.board.areaDefinitionMap[areaId];
         counter.areaId = areaId;
         counter.coord = area.coord;
@@ -265,12 +296,10 @@ export const placeMonsters = (game: GameState, scenario: Scenario) => {
     });
 }
 
-const randomNumber = (max: number) => {
-    return Math.floor(Math.random() * max) + 1;
-}
+
 
 export const getMonsterImageName = (id: number, type: CounterType, imageCount: number): string => {
-    switch(type) {
+    switch (type) {
         case CounterType.EGG:
             return `Egg-${(id % imageCount) + 1}`;
         case CounterType.BABY:

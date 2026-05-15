@@ -291,11 +291,54 @@ export interface ReplayElements {
     //fireElements: ReplayFireElement[]
 }
 
-export interface ReplayAttackElement {
-    attackerId: string
-    targetId: string
-    damage: number
+export interface ReplayAttackResultMap {
+    [key:string] : ReplayAttackResultEntry[]
 }
+
+export interface ReplayAttackElement {
+    attackGroup: AttackGroup
+    attackResultMap: ReplayAttackResultMap
+}
+
+export interface ReplayAttackResultEntry {
+    attackResult: AttackResult
+    numberOfDice?: number
+    roll?: number
+    message: string
+}
+
+export enum AttackResult {
+    STUN = "STUN",
+    KILL = "KILL",
+    GROW = "GROW",
+    SHRINK = "SHRINK",
+    FRAGMENT = "FRAGMENT"
+}
+
+// export interface AttackGroupResult {
+//     diceToKillResult: {
+//         numberOfDice: number
+//         roll: number
+//         constitution: number
+//     },
+//     diceToFragResult: {
+//         roll: number
+//     },
+//     diceToStunResult: {
+//         numberOfDice: number
+//         roll: number
+//         constitution: number
+//     },
+//     growResult: {
+//         message: string
+//     },
+//     shrinkResult: {
+//         message: string
+//     },
+//     noEffectResult: {
+//         message: string
+//     }
+// }
 
 export interface ReplayMovementElement {
     type: ActionType;

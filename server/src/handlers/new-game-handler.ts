@@ -2,22 +2,6 @@ import { Counter, CounterType, GameMode, GameState, NewGamePlayer, Phase, Player
 import { isCrew, isMonster, isWeapon } from "../shared/utils/counter-utils";
 import { getRandomIndex, shuffleArray } from "../shared/utils/dice-utils";
 
-export const createReplay = (gameState: GameState): Replay => {
-    return {
-        startingState: {
-            counterMap: { ...gameState.counterMap },
-            stackMap: { ...gameState.stackMap }
-        },
-        replayElements: {
-            movementElements: [],
-            attackElements: []
-        },
-        index: -1,
-        playing: false,
-        show: false
-    };
-}
-
 export const createNewGame = (newPlayers: NewGamePlayer[], scenario: Scenario, debug: boolean = false): GameState => {
     // console.log(JSON.stringify(scenario.board.areaDefinitionMap));
 

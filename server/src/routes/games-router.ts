@@ -273,12 +273,12 @@ router.post('/', function (req: Request, res: Response) {
         const debugMode = req.body.debug === true;
 
         const gameState = createNewGame(newPlayers, scenario, debugMode);
-        const replay = createReplay(gameState);
+        //const replay = createReplay(gameState);
 
         gameState.id = gameId;
 
         addGame(gameId, gameState);
-        writeReplay(gameId, replay, ReplayType.PRE);
+        //writeReplay(gameId, replay, ReplayType.PRE);
 
         console.log(`Created gameId: ${gameId}`);
 

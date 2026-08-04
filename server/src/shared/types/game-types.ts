@@ -292,12 +292,13 @@ export interface ReplayElements {
 }
 
 export interface ReplayAttackResultMap {
-    [key:string] : ReplayAttackResultEntry[]
+   [key:string] : ReplayAttackResultEntry[]
 }
 
 export interface ReplayAttackElement {
     attackGroup: AttackGroup
-    attackResultMap: ReplayAttackResultMap
+    attackResultMap: ReplayAttackResultMap 
+    //attackResultMap: ReplayAttackResultMap
 }
 
 export interface ReplayAttackResultEntry {

@@ -3,7 +3,7 @@ import { deleteGame, deleteReplay, doesGameExist, readGame, readGameList, readGa
 import { GameEntry, GameStatus, NewGamePlayer, Phase } from '../shared/types/game-types';
 import { addGame, markDirty, retrieveGame } from '../cache/game-cache';
 import { pushAction } from '../utils/push-actions';
-import { createNewGame, createReplay } from '../handlers/new-game-handler';
+import { createNewGame } from '../handlers/new-game-handler';
 import { ActionHandlers, enqueue, handleAttackGroup, handlePhase } from '../handlers/games-router-handlers';
 import { Action, ActionNextPhase, ActionType } from '../shared/types/action-types';
 import { ReplayType, Task } from '../types/server-types';

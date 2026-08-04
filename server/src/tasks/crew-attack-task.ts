@@ -33,15 +33,16 @@ const hasResult = (attackResults: { [key: string]: AttackResult[] }, counterId: 
     return existingResults && existingResults.includes(result);
 };
 
-const buildTargetBasedAttackGroups = (attackGroups: AttackGroup[]): { [key: string]: string[] } => {
-    const targetGroups: { [key: string]: string[] } = {};
+const buildTargetBasedAttackGroups = (attackGroups: AttackGroup[]): { [key: string]: AttackGroup[] } => {
+    const targetGroups: { [key: string]: AttackGroup[] } = {};
 
     attackGroups.forEach(attackGroup => {
         attackGroup.targetCounterIds.forEach(counterId => {
             if (!targetGroups[counterId]) {
-                targetGroups[counterId] = [];
+                targetGroups[counterId] = [attackGroup];
+            } else {
+                targetGroups[counterId].push(attackGroup);
             }
-            targetGroups[counterId].push(...attackGroup.attackingCounterIds);
         });
     });
 
@@ -81,16 +82,17 @@ const getReplayAttackElement = (attackReplayElements: ReplayAttackElement[], att
     return replayAttackElement!;
 }
 
-const updateReplayResults = (attackResultMap: ReplayAttackResultMap, counterId: string, attackResult: AttackResult, numberOfDice: number, roll: number, message: string): void => {
-    let replayAttackResultEntry = attackResultMap[counterId];
+const updateReplayResults = (attackResultMap: ReplayAttackResultMap, targetCounterId: string, attackResult: AttackResult, numberOfDice: number, roll: number, message: string): void => {
+    let replayAttackResultEntry = attackResultMap[targetCounterId];
     if (!replayAttackResultEntry) {
         replayAttackResultEntry = [{
             attackResult: attackResult,
             numberOfDice: numberOfDice,
             roll: roll,
             message: message
+
         }];
-        attackResultMap[counterId] = replayAttackResultEntry;
+        attackResultMap[targetCounterId] = replayAttackResultEntry;
     } else {
         replayAttackResultEntry.push({
             attackResult: attackResult,
@@ -103,6 +105,7 @@ const updateReplayResults = (attackResultMap: ReplayAttackResultMap, counterId: 
 
 export const handleGrowAttacks = (attackReplayElements: ReplayAttackElement[], attackGroups: AttackGroup[], counterMap: CounterMap, weaponEffectMap: { [key: string]: WeaponEffectEntry },
     attackResults: { [key: string]: AttackResult[] }, scenario: Scenario, usedWeaponIds: Set<string>): void => {
+    console.log("handleGrowAttacks");
     attackGroups.forEach((attackGroup) => {
         attackGroup.attackingCounterIds.forEach(counterId => {
             const counter = counterMap[counterId];
@@ -140,6 +143,7 @@ export const handleGrowAttacks = (attackReplayElements: ReplayAttackElement[], a
 
 export const handleShrinkAttacks = (attackReplayElements: ReplayAttackElement[], attackGroups: AttackGroup[], counterMap: CounterMap, weaponEffectMap: { [key: string]: WeaponEffectEntry },
     attackResults: { [key: string]: AttackResult[] }, scenario: Scenario, usedWeaponIds: Set<string>): void => {
+    console.log("handleShrinkAttacks");
     attackGroups.forEach((attackGroup) => {
         attackGroup.attackingCounterIds.forEach(counterId => {
             const counter = counterMap[counterId];
@@ -156,15 +160,18 @@ export const handleShrinkAttacks = (attackReplayElements: ReplayAttackElement[],
                             case CounterType.ADULT:
                                 updateAttackResults(attackResults, target.id, AttackResult.SHRINK);
                                 convertMonsterCounter(target, CounterType.BABY, scenario);
+                                updateReplayResults(replayAttackElement.attackResultMap, target.id, AttackResult.SHRINK, 0, 0, "Bitch shrank");
                                 break;
 
                             case CounterType.BABY:
                             case CounterType.FRAGMENT:
                                 updateAttackResults(attackResults, target.id, AttackResult.SHRINK);
                                 convertMonsterCounter(target, CounterType.EGG, scenario);
+                                updateReplayResults(replayAttackElement.attackResultMap, target.id, AttackResult.SHRINK, 0, 0, "Bitch shrank");
                                 break;
                             case CounterType.EGG:
                                 updateAttackResults(attackResults, target.id, AttackResult.KILL);
+                                updateReplayResults(replayAttackElement.attackResultMap, target.id, AttackResult.SHRINK, 0, 0, "Bitch shrank");
                                 break;
                             default:
                                 break;
@@ -178,6 +185,7 @@ export const handleShrinkAttacks = (attackReplayElements: ReplayAttackElement[],
 
 export const handleToKillAttacks = (attackReplayElements: ReplayAttackElement[], attackGroups: AttackGroup[], counterMap: CounterMap, weaponEffectMap: { [key: string]: WeaponEffectEntry },
     attackResults: { [key: string]: AttackResult[] }, usedWeaponIds: Set<string>): void => {
+    console.log("handleToKillAttacks");
     const targetBasedAttackGroups = buildTargetBasedAttackGroups(attackGroups);
     const targetIds = Object.keys(targetBasedAttackGroups);
     targetIds.forEach(targetId => {
@@ -186,9 +194,9 @@ export const handleToKillAttacks = (attackReplayElements: ReplayAttackElement[],
         }
 
         let totalDice = 0;
-        const attackerIds = targetBasedAttackGroups[targetId];
+        const groups = targetBasedAttackGroups[targetId];
 
-        attackerIds.forEach(attackerId => {
+        groups.flatMap(group => group.attackingCounterIds).forEach(attackerId => {
             const attacker = counterMap[attackerId];
             if (isWeapon(attacker)) {
                 const weaponEffect = weaponEffectMap[attacker.weaponType!];
@@ -211,13 +219,14 @@ export const handleToKillAttacks = (attackReplayElements: ReplayAttackElement[],
             }
         });
 
-        //issue: target could be in multiple attack groups so the result needs to be applied to all those group replays
-        //const replayAttackElement = getReplayAttackElement(attackReplayElements, attackGroup);
-
         const roll = rollX6SidedDie(totalDice);
         const target = counterMap[targetId];
         if (target && target.constitution && roll >= target.constitution) {
             updateAttackResults(attackResults, targetId, AttackResult.KILL);
+            groups.forEach(group => {
+                const replayAttackElement = getReplayAttackElement(attackReplayElements, group);
+                updateReplayResults(replayAttackElement.attackResultMap, target.id, AttackResult.KILL, totalDice, roll, "Bitch be dead");
+            });
         }
     });
 }
@@ -225,6 +234,7 @@ export const handleToKillAttacks = (attackReplayElements: ReplayAttackElement[],
 export const handleFragmentationAttacks = (attackReplayElements: ReplayAttackElement[], attackGroups: AttackGroup[], counterMap: CounterMap, weaponEffectMap: { [key: string]: WeaponEffectEntry },
     attackResults: { [key: string]: AttackResult[] }, scenario: Scenario, usedWeaponIds: Set<string>, nextCounterId: number, stackMap: StackMap): number => {
     let returnValue = nextCounterId;
+    console.log("handleFragmentationAttacks");
     attackGroups.forEach((attackGroup) => {
         attackGroup.attackingCounterIds.forEach((counterId) => {
             const counter = counterMap[counterId];
@@ -245,6 +255,7 @@ export const handleFragmentationAttacks = (attackReplayElements: ReplayAttackEle
                             // if there is area attack group for the target's current area and it's not the current attack group
                             // then add the fragments to that attack group's target ids.
                             const areaAttackGroup = attackGroups.find(group => group.type === AttackGroupType.AREA && group.areaId === areaId && group.areaId !== attackGroup.areaId);
+                            updateReplayResults(replayAttackElement.attackResultMap, target.id, AttackResult.FRAGMENT, 0, 0, `Bitch blown into ${roll} fragments`);
                             for (let i = 0; i < roll - 1; i++) {
                                 const fragment = createFragment(returnValue++, scenario);
                                 counterMap[fragment.id] = fragment;
@@ -268,6 +279,7 @@ export const handleFragmentationAttacks = (attackReplayElements: ReplayAttackEle
 
 export const handleStunAttacks = (attackReplayElements: ReplayAttackElement[], attackGroups: AttackGroup[], counterMap: CounterMap, weaponEffectMap: { [key: string]: WeaponEffectEntry },
     attackResults: { [key: string]: AttackResult[] }, usedWeaponIds: Set<string>): void => {
+    console.log("handleStunAttacks");
     const targetBasedAttackGroups = buildTargetBasedAttackGroups(attackGroups);
     const targetIds = Object.keys(targetBasedAttackGroups);
     targetIds.forEach(targetId => {
@@ -276,16 +288,16 @@ export const handleStunAttacks = (attackReplayElements: ReplayAttackElement[], a
         }
 
         let totalDice = 0;
-        const attackerIds = targetBasedAttackGroups[targetId];
+        const groups = targetBasedAttackGroups[targetId];
 
-        attackerIds.forEach(attackerId => {
+        groups.flatMap(group => group.attackingCounterIds).forEach(attackerId => {
             const attacker = counterMap[attackerId];
             if (isWeapon(attacker)) {
                 const weaponEffect = weaponEffectMap[attacker.weaponType!];
                 switch (weaponEffect.effect) {
                     case WeaponEffect.FIVE_DICE_TO_STUN:
                         totalDice += 5;
-                        usedWeaponIds.add
+                        usedWeaponIds.add(attacker.id);
                         break;
                 }
             }
@@ -297,6 +309,10 @@ export const handleStunAttacks = (attackReplayElements: ReplayAttackElement[], a
         const target = counterMap[targetId];
         if (target && target.constitution && roll >= target.constitution) {
             updateAttackResults(attackResults, targetId, AttackResult.STUN);
+            groups.forEach(group => {
+                const replayAttackElement = getReplayAttackElement(attackReplayElements, group);
+                updateReplayResults(replayAttackElement.attackResultMap, target.id, AttackResult.STUN, totalDice, roll, "Bitch be stunned");
+            });
         }
     });
 }
@@ -348,6 +364,7 @@ export const crewAttack = (data: any, postMessage: (data: any) => void): void =>
 };
 
 export const handleDroppedWeapons = (gameState: GameState, attackResults: { [key: string]: AttackResult[] }, scenario: Scenario) => {
+    console.log("handleDroppedWeapons");
     const keys = Object.keys(attackResults);
     keys.forEach(key => {
         const counter = gameState.counterMap[key];
@@ -364,6 +381,7 @@ export const handleDroppedWeapons = (gameState: GameState, attackResults: { [key
 };
 
 export const updateWeaponEffects = (gameState: GameState, usedWeaponIds: Set<string>) => {
+    console.log("updateWeaponEffects");
     usedWeaponIds.forEach(counterId => {
         const counter = gameState.counterMap[counterId];
         if (counter && isWeapon(counter)) {
@@ -376,6 +394,7 @@ export const updateWeaponEffects = (gameState: GameState, usedWeaponIds: Set<str
 };
 
 export const updateNonReusableWeapons = (gameState: GameState, usedWeaponIds: Set<string>, scenario: Scenario) => {
+    console.log("updateNonReusableWeapons");
     usedWeaponIds.forEach(counterId => {
         const counter = gameState.counterMap[counterId];
         if (counter && isWeapon(counter)) {

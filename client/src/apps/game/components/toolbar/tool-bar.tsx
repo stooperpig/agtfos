@@ -90,7 +90,7 @@ const ToolBar = () => {
             },
             label: () => ('Drop Weapon'),
             className: () => {
-                if (phase !== Phase.GRAB_WEAPON && phase !== Phase.MOVE) {
+                if (phase !== Phase.GRAB_WEAPON && phase !== Phase.CREW_MOVE) {
                     return defaultButtonClass;
                 }
 
@@ -145,7 +145,7 @@ const ToolBar = () => {
                 // if (crewCounter!.actions && crewCounter?.actions.some(action => action.type === ActionType.GRAB_WEAPON)) {
                 //     return defaultButtonClass;
                 // }
-                if (phase !== Phase.ATTACK) {
+                if (phase !== Phase.CREW_ATTACK) {
                     return defaultButtonClass;
                 }
 

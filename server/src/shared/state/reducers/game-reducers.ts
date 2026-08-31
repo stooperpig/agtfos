@@ -1,7 +1,11 @@
+import cloneDeep from "lodash.clonedeep";
 import { AttackGroup, Counter, CounterType, GameState, Phase, PlayerTurnStatus } from "../../../shared/types/game-types";
 import {
-    Action, ActionAddCountersToAttackGroup, ActionCreateAttackGroup, ActionDeleteAttackGroup, ActionDeselectCounter, ActionDropWeapon, ActionGrabWeapon, ActionGrowMonster, ActionLayEgg, ActionMoveToCoord, ActionNextPhase, ActionPhaseComplete, ActionRefreshGame, ActionRemoveCounterFromAttackGroup, ActionSelectArea, ActionSelectCounter,
-    ActionSetStatusMessage, ActionType, ActionUpdateConnectedClientCount
+    Action, ActionAddCountersToAttackGroup, ActionCreateAttackGroup, ActionDeleteAttackGroup, ActionDeselectCounter, ActionDropWeapon,
+    ActionGrabWeapon, ActionGrowMonster, ActionLayEgg, ActionMoveToCoord, ActionNextPhase, ActionPhaseComplete, ActionRefreshGame, ActionRemoveCountersFromAttackGroup, 
+    ActionSelectArea, ActionSelectCounter,
+    ActionSetStatusMessage, ActionType, ActionUpdateConnectedClientCount,
+    SelectLocationMode
 } from "../../types/action-types";
 import { isCrew } from "../../utils/counter-utils";
 import { randomUUID } from 'crypto';
@@ -14,6 +18,7 @@ export const processCreateAttackGroup = (state: GameState, action: ActionCreateA
         type: attackGroupType,
         targetCounterIds: targetCounterIds || [],
         attackingCounterIds: attackingCounterIds || [],
+        collateralCounterIds: [],
         goalDice: 0,
         dice: 0
     };
@@ -26,17 +31,18 @@ export const processDeleteAttackGroup = (state: GameState, action: ActionDeleteA
     state.attackGroups = state.attackGroups.filter(group => group.id !== attackGroupId);
 }
 
-export const processRemoveCounterFromAttackGroup = (state: GameState, action: ActionRemoveCounterFromAttackGroup): void => {
-    const { attackGroupId, counterId } = action.payload;
+export const processRemoveCountersFromAttackGroup = (state: GameState, action: ActionRemoveCountersFromAttackGroup): void => {
+    const { attackGroupId, counterIds } = action.payload;
     const attackGroup = state.attackGroups.find(group => group.id === attackGroupId);
     if (attackGroup) {
-        attackGroup.targetCounterIds = attackGroup.targetCounterIds.filter(id => id !== counterId);
-        attackGroup.attackingCounterIds = attackGroup.attackingCounterIds.filter(id => id !== counterId);
+        attackGroup.targetCounterIds = attackGroup.targetCounterIds.filter(id => !counterIds.includes(id));
+        attackGroup.attackingCounterIds = attackGroup.attackingCounterIds.filter(id => !counterIds.includes(id));
+        attackGroup.collateralCounterIds = attackGroup.collateralCounterIds.filter(id => !counterIds.includes(id));
     }
 }
 
-export const processAddCounterToAttackGroup = (state: GameState, action: ActionAddCountersToAttackGroup): void => {
-    const { attackGroupId, targetCounterIds, attackingCounterIds } = action.payload;
+export const processAddCountersToAttackGroup = (state: GameState, action: ActionAddCountersToAttackGroup): void => {
+    const { attackGroupId, targetCounterIds, attackingCounterIds, collateralCounterIds } = action.payload;
     const attackGroup = state.attackGroups.find(group => group.id === attackGroupId);
     if (attackGroup) {
         if (targetCounterIds && targetCounterIds.length > 0) {
@@ -44,6 +50,13 @@ export const processAddCounterToAttackGroup = (state: GameState, action: ActionA
         }
         if (attackingCounterIds && attackingCounterIds.length > 0) {
             attackGroup.attackingCounterIds.push(...attackingCounterIds);
+        }
+        if (collateralCounterIds && collateralCounterIds.length > 0) {
+            collateralCounterIds.forEach(id => {
+                if (!attackGroup.collateralCounterIds.includes(id)) {
+                    attackGroup.collateralCounterIds.push(id);
+                }
+            });
         }
     }
 }
@@ -144,7 +157,7 @@ export const processGrowMonster = (state: GameState, action: ActionGrowMonster):
 export const processLayEgg = (state: GameState, action: ActionLayEgg): void => {
     const { counterId, newCounterId, movementAllowance, attackDice, constitution, imageName, fromAreaId, fromCoord } = action.payload;
 
-    const parentCounter = state.counterMap[counterId];
+    //const parentCounter = state.counterMap[counterId];
 
     const newCounter: Counter = {
         id: newCounterId.toString(),
@@ -162,7 +175,8 @@ export const processLayEgg = (state: GameState, action: ActionLayEgg): void => {
         engaged: false,
         spotted: false,
         moved: false,
-        attacking: false
+        attacking: false,
+        killed: false
     };
 
     state.counterMap[newCounter.id] = newCounter;
@@ -232,12 +246,30 @@ export const processRefreshGame = (state: GameState, action: ActionRefreshGame):
     state.refreshGame = action.payload;
 }
 
+export const processSelectTargetArea = (state: GameState, action: ActionSelectArea): void => {
+    const { areaId } = action.payload;
+    state.currentTargetAreaId = areaId;
+    state.statusMessage = undefined;
+}
+
 export const processSelectArea = (state: GameState, action: ActionSelectArea): void => {
-    const { areaId, clearSelectedCounterIds } = action.payload;
+    const { areaId, clearSelectedCounterIds, selectMode } = action.payload;
     state.currentAreaId = areaId;
     if (clearSelectedCounterIds) {
         state.selectedCounterIds = [];
+        if (selectMode === SelectLocationMode.DOUBLE) {
+            const stack = state.stackMap[areaId];
+            if (stack && stack.counterIds.length > 0) {
+                stack.counterIds.forEach(counterId => {
+                    const counter = state.counterMap[counterId];
+                    if (counter && isCrew(counter) && counter.playerId === state.currentPlayerId) {
+                        state.selectedCounterIds.push(counterId);
+                    }
+                });
+            }
+        }
     }
+
     state.statusMessage = undefined;
 }
 
@@ -278,6 +310,21 @@ export const processSelectCounter = (state: GameState, action: ActionSelectCount
 export const processUpdateClientCount = (state: GameState, action: ActionUpdateConnectedClientCount): void => {
     const count = action.payload;
     state.connectedClients = count;
+}
+
+export const processLoadGame = (state: GameState, data: GameState): GameState => {
+    if (data.replay && data.replay.activeState === undefined) {
+        if (data.phase === 'CREW_ATTACK_REPLAY' || data.phase === 'MONSTER_ATTACK_REPLAY') {
+            data.replay.activeState = cloneDeep({
+                counterMap: data.counterMap,
+                stackMap: data.stackMap
+            });
+        } else {
+            data.replay.activeState = cloneDeep(data.replay.startingState);
+        }
+    }
+    
+    return data;
 }
 
 //create builders

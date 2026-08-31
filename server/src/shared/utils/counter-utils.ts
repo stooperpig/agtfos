@@ -4,6 +4,10 @@ export const isCrew = (counter: Counter) => {
     return isCrewType(counter.type);
 }
 
+export const isRobot = (counter: Counter) => {
+    return counter.type === CounterType.ROBOT;
+}
+
 export const isCrewType = (type: CounterType) => {
     return type === CounterType.CREW || type === CounterType.ROBOT;
 }

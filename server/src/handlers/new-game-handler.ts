@@ -25,7 +25,7 @@ export const createNewGame = (newPlayers: NewGamePlayer[], scenario: Scenario, d
         isGameOver: false,
         gameMode: GameMode.NORMAL,
         refreshGame: false,
-        turn: 0,
+        turn: 1,
         phase: Phase.GRAB_WEAPON,
         players: players,
         scenarioId: scenario.id,
@@ -102,7 +102,8 @@ export const generateWeaponCounters = (game: GameState, scenario: Scenario) => {
                 engaged: false,
                 spotted: false,
                 moved: false,
-                attacking: false
+                attacking: false,
+                killed: false
             }
             game.counterMap[counter.id] = counter;
         }
@@ -185,7 +186,8 @@ export const generateCrewCounters = (game: GameState, scenario: Scenario) => {
             engaged: false,
             spotted: false,
             moved: false,
-            attacking: false
+            attacking: false,
+            killed: false
         }
         game.counterMap[counter.id] = counter;
     });
@@ -212,7 +214,8 @@ export const generateMonsterCounters = (game: GameState, scenario: Scenario) => 
             engaged: false,
             spotted: false,
             moved: false,
-            attacking: false
+            attacking: false,
+            killed: false
         }
         game.counterMap[counter.id] = counter;
     }
@@ -233,7 +236,8 @@ export const generateMonsterCounters = (game: GameState, scenario: Scenario) => 
             engaged: false,
             spotted: false,
             moved: false,
-            attacking: false
+            attacking: false,
+            killed: false
         }
         game.counterMap[counter.id] = counter;
     }
@@ -254,7 +258,8 @@ export const generateMonsterCounters = (game: GameState, scenario: Scenario) => 
             engaged: false,
             spotted: false,
             moved: false,
-            attacking: false
+            attacking: false,
+            killed: false
         }
         game.counterMap[counter.id] = counter;
     }
@@ -290,7 +295,9 @@ export const getMonsterImageName = (id: number, type: CounterType, imageCount: n
             return `Baby-${(id % imageCount) + 1}`;
         case CounterType.ADULT:
             return `Adult-${(id % imageCount) + 1}`;
+        case CounterType.FRAGMENT:
+            return `Fragment-${(id % imageCount) + 1}`;
         default:
-            return 'unknown';
+            return `unknown-${type} id: ${id}`;
     }
 }

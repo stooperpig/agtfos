@@ -27,6 +27,12 @@ img.counter-panel-weapon-image {
     height: 48px;
 }
 
+img.counter-panel-weapon-back-image {
+    margin-top: -20px;
+    width: 80px;
+    height: 80px;
+}
+
 .counter-panel-image {
     width: 90px;
     height: 90px;
@@ -52,4 +58,14 @@ img.counter-panel-weapon-image {
 
 .counter-panel-player-name {
     padding-top: 2px;
+}
+
+.counter-panel-killed {
+    color: white;
+    background-color: red;
+}
+
+.counter-panel-stunned {
+    color: black;
+    background-color: orange;
 }

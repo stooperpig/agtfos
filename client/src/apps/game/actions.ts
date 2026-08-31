@@ -2,8 +2,8 @@ import { getData } from "../../api/api-utils";
 import { ImageData, ScenarioData } from "../../constants/game-constants";
 import { GameState, Scenario } from "../../shared/types/game-types";
 
-export const retrieveGame = async (gameId: string, playerId: string): Promise<GameState> => {
-  const gameState = await getData<GameState>(`/api/games/${gameId}/player/${playerId}`);
+export const  retrieveGame = async (gameId: string, playerId: string, version?: string): Promise<GameState> => {
+  const gameState = await getData<GameState>(`/api/games/${gameId}/player/${playerId}${version ? `/version/${version}` : ''}`);
   const scenario = await getData<Scenario>(`/api/scenarios/${gameState.scenarioId}`);
   
   Object.assign(ImageData, scenario.imageMap);

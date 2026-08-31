@@ -1,14 +1,15 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import './tool-bar.css';
 import { useAppDispatch, useAppSelector } from '../../../../constants/store';
 import { PlayerTurnStatus } from '../../../../shared/types/game-types';
-import { isCrew, isMonster, isWeapon } from '../../../../shared/utils/counter-utils';
+import { isCrew, isMonster, isRobot, isWeapon } from '../../../../shared/utils/counter-utils';
 import { putData } from '../../../../api/api-utils';
 import { socketId } from '../../../../api/web-socket';
 import ReplayControls from './replay-controller';
-import { ActionDropWeapon, ActionGrabWeapon, ActionType } from '../../../../shared/types/action-types';
+import { ActionDropWeapon, ActionGrabWeapon, ActionReplayShow, ActionType } from '../../../../shared/types/action-types';
 import { Phase } from '../../../../shared/types/game-types';
 import { AttackModal } from '../modal/attack-modal/attack-modal';
+import { AttackReplayModal } from '../modal/attack-replay-modal/attack-replay-modal';
 
 const ToolBar = () => {
     const dispatch = useAppDispatch();
@@ -18,11 +19,18 @@ const ToolBar = () => {
     const currentPlayerId = useAppSelector(state => state.currentPlayerId);
     const counterMap = useAppSelector(state => state.counterMap);
     const selectedCounterIds = useAppSelector(state => state.selectedCounterIds);
-    const replayState = useAppSelector(state => state.replay);
+    const stateReplay = useAppSelector(state => state.replay);
     const selectedArea = useAppSelector(state => state.currentAreaId);
     const stackMap = useAppSelector(state => state.stackMap);
 
     const [showAttackModal, setShowAttackModal] = useState<boolean>(false);
+    const [showAttackReplayModal, setShowAttackReplayModal] = useState<boolean>(false);
+
+    useEffect(() => {
+        if (phase === Phase.CREW_ATTACK_REPLAY) {
+            setShowAttackReplayModal(stateReplay?.show || false);
+        }
+    }, [phase, stateReplay]);
 
     const toggleModal = (value: boolean, setter: React.Dispatch<React.SetStateAction<boolean>>) => {
         setter(!value);
@@ -37,6 +45,33 @@ const ToolBar = () => {
     const enabledButtonClass = 'tool-bar-button';
 
     console.log('isPhaseCompleted', isPhaseCompleted);
+
+    const phaseButton = {
+        handler: async () => {
+            const action = { type: ActionType.PHASE_COMPLETE, payload: { playerId: currentPlayerId } };
+            putData(`/api/games/${gameId}/phase`, { socketId, action }).then(() => {
+                dispatch(action);
+            }).catch((resp) => {
+                dispatch({ type: ActionType.SET_STATUS_MESSAGE, payload: resp.message });
+            });
+        },
+        label: () => {
+            if (isPhaseCompleted) {
+                return `Waiting...`;
+            } else if (phase === Phase.CREW_ATTACK) {
+                return `Resolve All Attacks`;
+            } else {
+                return `Next Phase`;
+            }
+        },
+        className: () => {
+            if (isPhaseCompleted) {
+                return 'tool-bar-button-next nextPhase-waiting-local';
+            } else {
+                return 'tool-bar-button-next';
+            }
+        }
+    }
 
     const buttons = [
         {
@@ -63,7 +98,7 @@ const ToolBar = () => {
 
                 const crewCount = selectedCounters.reduce((acc, counter) => isCrew(counter) ? acc + 1 : acc, 0);
                 const weaponCount = selectedCounters.reduce((acc, counter) => isWeapon(counter) ? acc + 1 : acc, 0);
-                if (crewCount !== 1 || weaponCount !== 1) {
+                if (crewCount !== 1 || weaponCount !== 1 || selectedCounters.some(counter => isRobot(counter))) {
                     return defaultButtonClass;
                 }
 
@@ -170,51 +205,32 @@ const ToolBar = () => {
                 if (!hasEnemy) {
                     return defaultButtonClass;
                 }
-                
+
                 //check for selected area
                 //check for presence of crew in that area
                 //check for presence of monsters or crew with ranged weapons in that area
 
                 return enabledButtonClass;
             }
-        }, 
-        {
-            handler: async () => {
-                // if (isPhaseCompleted) {
-                //     return;
-                // }
-
-                const action = { type: ActionType.PHASE_COMPLETE, payload: { playerId: currentPlayerId } };
-                putData(`/api/games/${gameId}/phase`, { socketId, action }).then(() => {
-                    dispatch(action);
-                }).catch((resp) => {
-                    dispatch({ type: ActionType.SET_STATUS_MESSAGE, payload: resp.message });
-                });
-            },
-            label: () => {
-                if (isPhaseCompleted) {
-                    return `Waiting...`;
-                } else if (phase === Phase.ATTACK) {
-                    return `Resolve All Attacks`;
-                } else {
-                    return `Next Phase`;
-                }
-            },
-            className: () => {
-                if (isPhaseCompleted) {
-                    return 'tool-bar-button-next nextPhase-waiting-local';
-                } else {
-                    return 'tool-bar-button-next';
-                }
-            }
-        }
+        },
+        phaseButton
     ];
 
+    const handleCloseAttackReplay = () => {
+        console.log("handleCloseAttackReplay");
+        const replayShowAction: ActionReplayShow = { type: ActionType.REPLAY_SHOW, payload: false }
+        dispatch(replayShowAction);
+        toggleModal(showAttackReplayModal, setShowAttackReplayModal);
+    };
+
     const renderButtons = () => {
-        console.log("replayState", replayState);
-        if (replayState?.show) {
+        console.log("replayState", stateReplay);
+        if (stateReplay?.show && phase === Phase.MONSTER_MOVE_REPLAY) {
             return (
-                <ReplayControls />
+                <>
+                    <ReplayControls />
+                    <button className={phaseButton.className()} onClick={phaseButton.handler}>{phaseButton.label()}</button>
+                </>
             );
         } else {
             console.log("rendering buttons", buttons.length);
@@ -232,6 +248,7 @@ const ToolBar = () => {
         <div className="tool-bar">
             {renderButtons()}
             <AttackModal show={showAttackModal} title={"Close Combat Attacks"} areaId={selectedArea} stack={selectedStack} closeHandler={() => toggleModal(showAttackModal, setShowAttackModal)} />
+            <AttackReplayModal show={showAttackReplayModal} title={phase === Phase.CREW_ATTACK_REPLAY ? "Crew Attack Replay" : "Monster Attack Replay"} closeHandler={handleCloseAttackReplay} />
         </div>
     );
 }

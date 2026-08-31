@@ -45,6 +45,7 @@ export interface AttackGroup {
     type: AttackGroupType
     targetCounterIds: string[]
     attackingCounterIds: string[]
+    collateralCounterIds: string[]
     goalDice: number
     dice: number
 }
@@ -76,6 +77,7 @@ export interface Counter {
     name?: string
     type: CounterType
     stunned: boolean
+    collaterallyStunned?: boolean
     weaponCounterId?: string
     weaponType?: WeaponType
     movementAllowance: number
@@ -92,6 +94,7 @@ export interface Counter {
     spotted: boolean
     attacking: boolean
     moved: boolean
+    killed: boolean
 }
 
 export interface CounterMap {
@@ -131,6 +134,7 @@ export interface GameState {
     phase: Phase
     players: Player[]
     currentAreaId?: string
+    currentTargetAreaId?: string
     scenarioId: string
     counterMap: CounterMap
     nextCounterId: number
@@ -291,17 +295,19 @@ export interface ReplayElements {
     //fireElements: ReplayFireElement[]
 }
 
-export interface ReplayAttackResultMap {
-   [key:string] : ReplayAttackResultEntry[]
-}
+// export interface ReplayAttackResultMap {
+//    [key:string] : ReplayAttackResultEntry[]
+// }
 
 export interface ReplayAttackElement {
-    attackGroup: AttackGroup
-    attackResultMap: ReplayAttackResultMap 
+    areaId: string
+    targetCounterIds: string[]
+    attackingCounterIds: string[]
+    result: ReplayAttackResult
     //attackResultMap: ReplayAttackResultMap
 }
 
-export interface ReplayAttackResultEntry {
+export interface ReplayAttackResult {
     attackResult: AttackResult
     numberOfDice?: number
     roll?: number
@@ -313,7 +319,8 @@ export enum AttackResult {
     KILL = "KILL",
     GROW = "GROW",
     SHRINK = "SHRINK",
-    FRAGMENT = "FRAGMENT"
+    FRAGMENT = "FRAGMENT",
+    NO_EFFECT = "NO_EFFECT"
 }
 
 // export interface AttackGroupResult {
@@ -348,7 +355,7 @@ export interface ReplayMovementElement {
     fromCoord: Coord;
     toAreaId?: string;
     toCoord?: Coord;
-    weaponCounterId?: string;
+    //weaponCounterId?: string;
     movementCost: number
     nextType?: CounterType;
     newCounterId?: string;
@@ -356,7 +363,7 @@ export interface ReplayMovementElement {
     attackDice?: number;
     constitution?: number;
     imageName?: string;
-    engagedData: { [key: string]: boolean };   //todo: this probably needs to set property on all effected counters [] not just the moving counter,  
+    engaged: boolean;   //todo: this probably needs to set property on all effected counters [] not just the moving counter,  
     spottedData: { [key: string]: boolean };   //todo: this probably needs to set property on all effected counters (map) not just the moving counter,
 }
 
@@ -389,7 +396,7 @@ export interface Scenario {
             effectType: WeaponEffectType
             range: number
             targetType: WeaponTargetType
-            reuseable: boolean
+            reusable: boolean
         }
     }
 }

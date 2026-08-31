@@ -108,3 +108,15 @@
     font-weight: bold;
     color: #fff;
 }
+
+.group-counter-crew-with-weapon {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.group-counter-dash-border {
+    border: 1px dashed yellow;
+    padding: 5px;
+    border-radius: 3px;
+}

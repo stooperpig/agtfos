@@ -22,9 +22,9 @@ export const AttackGroupDisplay = ({ attackGroup, groupSelectClick, removeGroupC
     const leftClickHandler = (e: React.MouseEvent, attackGroupId: string, counterId: string) => {
         e.preventDefault();
         if (attackGroup.type === AttackGroupType.AREA) {
-            const counter = attackGroup.targetCounterIds.find((id) => id === counterId);
-            if (counter) {
-                dispatch({ type: 'SET_STATUS_MESSAGE', payload: "You can not remove targets from an area attack group" });
+            const isTargetOrCollateralCounter = attackGroup.targetCounterIds.some((id) => id === counterId) || attackGroup.collateralCounterIds.some((id) => id === counterId);
+            if (isTargetOrCollateralCounter) {
+                dispatch({ type: 'SET_STATUS_MESSAGE', payload: "You can not remove targets or collateral crew from an area attack group" });
                 return;
             }
         }
@@ -70,23 +70,57 @@ export const AttackGroupDisplay = ({ attackGroup, groupSelectClick, removeGroupC
         )
     };
 
+    const renderCounter = (counterId: string) => {
+        const counter = counterMap[counterId];
+
+        if (isWeapon(counter)) {
+            const ownerCounter = counterMap[counter.ownerCounterId!];
+            return (
+                <div key={counterId} className="group-counter" onClick={(e) => leftClickHandler(e, attackGroup.id, counterId)}>
+                    <span className="group-counter-name">{getCounterName(counter)}</span><br />
+                    <div className="group-counter-crew-with-weapon">
+                        <img className="group-counter-image-large" src={`/images/${ownerCounter.imageName}.png`} />
+                        &#8614;
+                        <img className="group-counter-image-large" src={`/images/${counter.imageName}.png`} />
+                    </div>
+                </div>
+            );
+        }
+
+        return (
+            <div key={counterId} className="group-counter" onClick={(e) => leftClickHandler(e, attackGroup.id, counterId)}>
+                <span className="group-counter-name">{getCounterName(counter)}</span><br />
+                <img className="group-counter-image-large" src={`/images/${counter.imageName}.png`} />
+            </div>
+        )
+    }
+
+    const renderCollateralCounters = () => {
+        if (attackGroup.collateralCounterIds.length === 0) {
+            return null;
+        }
+
+        return (
+            <div className="group-counters-list group-counter-dash-border">
+                {[...attackGroup.collateralCounterIds].map((counterId: string) => {
+                    return renderCounter(counterId);
+                })}
+            </div>
+        )
+    }
+
     return (
         <div key={attackGroup.id} className={`attack-group ${active ? 'active' : ''}`} onClick={() => groupSelectClick(attackGroup.id)}>
             <div className="attack-group-title">{attackGroup.type === AttackGroupType.AREA ? 'Area Attack' : 'Single Target'}</div>
             <div className="group-counters">
                 <div className="group-counters-list">
                     {[...attackGroup.attackingCounterIds, ...attackGroup.targetCounterIds].map((counterId: string) => {
-                        const counter = counterMap[counterId];
-                        return (
-                            <div key={counterId} className="group-counter" onClick={(e) => leftClickHandler(e, attackGroup.id, counterId)}>
-                                <span className="group-counter-name">{getCounterName(counter)}</span><br />
-                                <img className="group-counter-image-large" src={`/images/${counter.imageName}.png`} />
-                            </div>
-                        )
+                        return renderCounter(counterId);
                     })}
                 </div>
                 {renderAreaWarning()}
                 {renderCollateralEffectWarning()}
+                {renderCollateralCounters()}
             </div>
             <button
                 className="remove-group-x-btn"

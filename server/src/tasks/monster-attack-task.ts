@@ -10,6 +10,7 @@ import { DiceTableData } from "../types/server-types";
 import { getMonsterImageName } from "../handlers/new-game-handler";
 import { getAdjacentAreas, getLosAreas, getShortestPath } from "../utils/map-utils";
 import { randomUUID } from "crypto";
+import { createReplay } from "../utils/game-utils";
 
 // function blockingSleep(ms: number) {
 //     const sab = new SharedArrayBuffer(4);
@@ -29,6 +30,8 @@ export const monsterAttack = (data: any, postMessage: (data: any) => void): void
 
         resetCounters(gameState);
 
+        const replay = createReplay(gameState);
+
         // //todo: eggs will not exist in the starting counterMap for replay??? need to handle this; they won't have actions but we need to represent them in the replay
         // //todo: ok ok,  all these grow/laying egg things are actions for the counter.
 
@@ -46,6 +49,8 @@ export const monsterAttack = (data: any, postMessage: (data: any) => void): void
         //     }
         // });
         //gameState.attackGroups = [];
+
+        gameState.replay = replay;
         gameState.phase = Phase.MONSTER_ATTACK_REPLAY;
         gameState.players.forEach(player => {
             player.turnStatus = PlayerTurnStatus.STARTED;
@@ -65,8 +70,9 @@ const resetCounters = (gameState: GameState) => {
     counters.forEach(counter => {
         if (isMonster(counter)) {
             counter.usedMovementAllowance = 0;
-            counter.stunned = false;
+            //counter.stunned = false;
             counter.engaged = false;
+            counter.attacking = false;
         }
     });
 }
@@ -104,6 +110,7 @@ const planMovementPhase = (gameState: GameState, scenario: Scenario, diceTable: 
             type: AttackGroupType.SINGLE_TARGET,
             targetCounterIds: [crewScore.crew.id],
             attackingCounterIds: [],
+            collateralCounterIds: [],
             dice: 0,
             goalDice: diceTable[crewScore.crew.constitution]
         };

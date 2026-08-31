@@ -60,9 +60,10 @@ export const GamePanel = () => {
             const parameters = getUrlVars();
             const gameId = (parameters.gameId) ? parameters.gameId : "0";
             const currentPlayerId = (parameters.player) ? parameters.player : "1";
+            const version = (parameters.version) ? parameters.version : undefined;
             console.log("Home loading...");
 
-            retrieveGame(gameId, currentPlayerId).then(game => {
+            retrieveGame(gameId, currentPlayerId, version).then(game => {
                 console.log(`retrieved game: ${game.id}`);
 
                 if (game.players) {
@@ -94,8 +95,12 @@ export const GamePanel = () => {
         }
     }, [refreshGame, gameId, currentPlayerId, dispatch]);
 
+    const handleContextMenu = (event: React.MouseEvent) => {
+        event.preventDefault();
+    }
+
     return (
-        <div className="game-panel">
+        <div className="game-panel" onContextMenu={handleContextMenu}>
             <MenuBar />
             <ToolBar />
             <div className="game-panel-center">

@@ -1,10 +1,11 @@
+import cloneDeep from "lodash.clonedeep";
 import { GameState, Replay } from "../shared/types/game-types";
 
 export const createReplay = (gameState: GameState): Replay => {
     return {
         startingState: {
-            counterMap: { ...gameState.counterMap },
-            stackMap: { ...gameState.stackMap }
+            counterMap: cloneDeep(gameState.counterMap),
+            stackMap: cloneDeep(gameState.stackMap)
         },
         replayElements: {
             movementElements: [],

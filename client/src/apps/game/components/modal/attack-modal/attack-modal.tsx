@@ -7,10 +7,11 @@ import { isCrew, isMonster, isWeapon } from "../../../../../shared/utils/counter
 import { RootState, useAppDispatch, useAppSelector } from "../../../../../constants/store";
 import { getWeaponTargetType, isAreaWeapon } from "../../../utils/counter-utils";
 import { CounterDisplay } from "./counter-display";
-import { ActionAddCountersToAttackGroup, ActionCreateAttackGroup, ActionDeleteAttackGroup, ActionRemoveCounterFromAttackGroup, ActionSetStatusMessage, ActionType } from "../../../../../shared/types/action-types";
+import { ActionAddCountersToAttackGroup, ActionCreateAttackGroup, ActionDeleteAttackGroup, ActionRemoveCountersFromAttackGroup, ActionSetStatusMessage, ActionType } from "../../../../../shared/types/action-types";
 import { putData } from "../../../../../api/api-utils";
 import { socketId } from '../../../../../api/web-socket';
 import { AttackGroupDisplay } from "./attack-group-display";
+import { ScenarioData } from "../../../../../constants/game-constants";
 
 interface PropTypes {
     closeHandler: () => void;
@@ -91,16 +92,13 @@ export const AttackModal = (props: PropTypes) => {
         const counter = counterMap[counterId];
         if (!counter) return;
 
-        //when adding area weapon to a group if the groups does not have targets then 
-        //   add all monsters to the group
+
         //   if weapon is a area weapon that affects crew also then create a friendly fire group and add crew to it.
-        //   why not automatically handle the area group the same way (i.e. create area group and add monsters to it)
         //if (isWeapon(counter) && activeGroup.type === AttackGroupType.SINGLE_TARGET && isAreaWeapon(counter)) {
         //    const areaAttackGroup = getAreaAttackGroup();
-            //todo: find/create the area attack group and add all monsters to it
+        //todo: find/create the area attack group and add all monsters to it
         //} 
-        
-        //const areaAttackGroup = getAreaAttackGroup();
+
 
         //   see if the proper group type exists for those types of weapons.  if not create it and add this weapon to it and all the impacted counters to it.
 
@@ -132,11 +130,21 @@ export const AttackModal = (props: PropTypes) => {
             return;
         }
 
+        let collateralCounterIds: string[] = [];
+        if (activeGroup.type === AttackGroupType.AREA && isAreaWeapon(counter)) {
+            const weaponData = ScenarioData.weaponMap[counter.weaponType!];
+            if (weaponData && weaponData.targetType === WeaponTargetType.ALL) {
+                collateralCounterIds = getStackCounters().filter(c => isCrew(c)).map(c => c.id);
+                console.log('Setting collateral counter ids for area weapon in group', activeGroupId, collateralCounterIds);
+            }
+        }
+
         const action: ActionAddCountersToAttackGroup = {
             type: ActionType.ADD_COUNTERS_TO_ATTACK_GROUP,
             payload: {
                 attackGroupId: activeGroupId,
                 attackingCounterIds: [counterId],
+                collateralCounterIds: collateralCounterIds,
             }
         };
 
@@ -250,13 +258,37 @@ export const AttackModal = (props: PropTypes) => {
     const removeCounterFromGroup = (groupId: string, counterId: string) => {
         console.log('Removing counter from group:', groupId, counterId);
 
-        const action: ActionRemoveCounterFromAttackGroup = {
-            type: ActionType.REMOVE_COUNTER_FROM_ATTACK_GROUP,
+        const action: ActionRemoveCountersFromAttackGroup = {
+            type: ActionType.REMOVE_COUNTERS_FROM_ATTACK_GROUP,
             payload: {
                 attackGroupId: groupId,
-                counterId: counterId,
+                counterIds: [counterId],
             }
         };
+
+        //need to see if the group has collateral counters and if so, 
+        // remove them if group does not have any attacking weapons with collateral effect
+        if (attackGroups) {
+            const group = attackGroups.find(g => g.id === groupId);
+            if (group && group.collateralCounterIds.length > 0) {
+                // Check if any attacking weapon has collateral effect
+                const hasCollateralWeapon = group.attackingCounterIds.some(attackingCounterId => {
+                    if (counterId !== attackingCounterId) {
+                        const counter = counterMap[counterId];
+                        if (isWeapon(counter)) {
+                            const weaponData = ScenarioData.weaponMap[counter.weaponType!]
+                            return weaponData && weaponData.targetType === WeaponTargetType.ALL;
+                        }
+                    }
+                    return false;
+                });
+                
+                if (!hasCollateralWeapon) {
+                    // Remove collateral counters
+                    action.payload.counterIds.push(...group.collateralCounterIds);
+                }
+            }
+        }
 
         console.log(JSON.stringify(action));
         putData(`api/games/${gameId}/attackgroup`, { socketId, action: action }).then((resp) => {

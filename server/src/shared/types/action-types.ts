@@ -29,6 +29,7 @@ export enum ActionType {
     REPLAY_END = 'REPLAY_END',
     //REPLAY_SET_INDEX = 'REPLAY_SET_INDEX',
     REFRESH_REPLAY = 'REFRESH_REPLAY',
+    CLEAR_REPLAY_ANIMATION = 'CLEAR_REPLAY_ANIMATION',
     //ADD_ACTION = 'ADD_ACTION',
     //SET_SPOTTED_OR_ENAGED = 'SET_SPOTTED_OR_ENAGED',
     //UPDATE_MONSTER_PLANS = 'UPDATE_MONSTER_PLANS',
@@ -37,24 +38,26 @@ export enum ActionType {
     LAY_EGG = 'LAY_EGG',
     CREATE_ATTACK_GROUP = 'CREATE_ATTACK_GROUP',
     DELETE_ATTACK_GROUP = 'DELETE_ATTACK_GROUP',
-    REMOVE_COUNTER_FROM_ATTACK_GROUP = 'REMOVE_COUNTER_FROM_ATTACK_GROUP',
-    ADD_COUNTERS_TO_ATTACK_GROUP = 'ADD_COUNTERS_TO_ATTACK_GROUP'
+    REMOVE_COUNTERS_FROM_ATTACK_GROUP = 'REMOVE_COUNTER_FROM_ATTACK_GROUP',
+    ADD_COUNTERS_TO_ATTACK_GROUP = 'ADD_COUNTERS_TO_ATTACK_GROUP',
+    SELECT_TARGET_AREA = 'SELECT_TARGET_AREA'
 }
 
-type RemoveCounterFromAttackGroupPayload = {
+type RemoveCountersFromAttackGroupPayload = {
     attackGroupId: string;
-    counterId: string;
+    counterIds: string[];
 };
 
-export interface ActionRemoveCounterFromAttackGroup extends Action {
-    type: ActionType.REMOVE_COUNTER_FROM_ATTACK_GROUP;
-    payload: RemoveCounterFromAttackGroupPayload;
+export interface ActionRemoveCountersFromAttackGroup extends Action {
+    type: ActionType.REMOVE_COUNTERS_FROM_ATTACK_GROUP;
+    payload: RemoveCountersFromAttackGroupPayload;
 }
 
 type AddCountersToAttackGroupPayload = {
     attackGroupId: string;
     targetCounterIds?: string[];
     attackingCounterIds?: string[];
+    collateralCounterIds?: string[];
 };
 
 export interface ActionAddCountersToAttackGroup extends Action {
@@ -77,6 +80,7 @@ type CreateAttackGroupPayload = {
     type: AttackGroupType
     targetCounterIds?: string[];
     attackingCounterIds?: string[];
+    collateralCounterIds?: string[];
 };
 
 export interface ActionCreateAttackGroup extends Action {
@@ -264,6 +268,7 @@ export interface ActionSelectCounter extends Action {
 
 type SelectAreaPayload = {
     areaId: string;
+    selectMode?: SelectLocationMode;
     clearSelectedCounterIds: boolean;
 };
 
@@ -271,6 +276,20 @@ export interface ActionSelectArea extends Action {
     type: ActionType.SELECT_AREA;
     payload: SelectAreaPayload;
 };
+
+export enum SelectLocationMode {
+    DOUBLE = 'DOUBLE',
+    SINGLE = 'SINGLE'
+}
+
+type SelectTargetArea = {
+    areaId: string;
+}
+
+export interface ActionSelectTargetArea extends Action {
+    type: ActionType.SELECT_TARGET_AREA;
+    payload: SelectTargetArea;
+}
 
 type MoveToCoordPayload = {
     counterIds: string[]

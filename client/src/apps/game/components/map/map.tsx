@@ -1,93 +1,65 @@
 import './map.css';
-import React, { createRef, useRef } from 'react'
+import React, { useRef } from 'react'
 import { useAppDispatch, useAppSelector } from '../../../../constants/store';
 import { ImageData, ScenarioData } from '../../../../constants/game-constants';
-import { Coord, CounterMap, Player, Polygon, Stack, StackMap, AreaDefinition, Aperture, AreaDefinitionMap, Phase, Counter, Animation, WeaponType, WeaponEffectEntry, WeaponEffect } from '../../../../shared/types/game-types';
+import { Coord, CounterMap, Player, Polygon, Stack, StackMap, AreaDefinition, AreaDefinitionMap, Phase, Counter, Animation, WeaponType, WeaponEffectEntry, WeaponEffect } from '../../../../shared/types/game-types';
 import { getMovementCost, pointInPolygon } from '../../utils/map-utils';
 import { sortCounterIdsBySelected, validateMove } from './utils';
-import { sendMessage, socketId } from '../../../../api/web-socket';
+import { socketId } from '../../../../api/web-socket';
 import { putData } from '../../../../api/api-utils';
-import { ActionMoveToCoord, ActionType } from '../../../../shared/types/action-types';
+import { ActionMoveToCoord, ActionSelectTargetArea, ActionType, SelectLocationMode } from '../../../../shared/types/action-types';
 import { checkEngagement } from '../../../../shared/utils/movement-utils';
-
-// const weaponsDisplayTable: { [key: string]: Coord } = {
-//     [WeaponType.BOTTLE_OF_ACID]: { x: 0, y: 0 },
-//     [WeaponType.CANNISTER_OF_ZGWORTZ]: { x: 0, y: 0 },
-//     [WeaponType.COMMUNICATIONS_BEAMER]: { x: 0, y: 0 },
-//     [WeaponType.ELECTRIC_FENCE]: { x: 0, y: 0 },
-//     [WeaponType.FIRE_EXTINGUSHER]: { x: 0, y: 0 },
-//     [WeaponType.GAS_GRENADE]: { x: 0, y: 0 },
-//     [WeaponType.HYPODERMIC]: { x: 0, y: 0 },
-//     [WeaponType.KNIFE]: { x: 0, y: 0 },
-//     [WeaponType.POOL_STICK]: { x: 0, y: 0 },
-//     [WeaponType.CAN_OF_ROCKET_FUEL]: { x: 0, y: 0 },
-//     [WeaponType.STUN_PISTOL]: { x: 0, y: 0 },
-//     [WeaponType.WELDING_TORCH]: { x: 0, y: 0 },
-// }
 
 const weaponsDisplayTable: { [key: string]: Coord } = {
     [WeaponType.BOTTLE_OF_ACID]: {
-        "x": 3069,
-        "y": 444
+        "x": 3066,
+        "y": 284
     },
     [WeaponType.CANNISTER_OF_ZGWORTZ]: {
-        "x": 3068,
-        "y": 537
+        "x": 3065,
+        "y": 398
     },
     [WeaponType.COMMUNICATIONS_BEAMER]: {
-        "x": 3067,
-        "y": 630
+        "x": 3065,
+        "y": 513
     },
     [WeaponType.ELECTRIC_FENCE]: {
-        "x": 3066,
-        "y": 723
+        "x": 3064,
+        "y": 630
     },
     [WeaponType.FIRE_EXTINGUSHER]: {
-        "x": 3065,
-        "y": 816
+        "x": 3063,
+        "y": 746
     },
     [WeaponType.GAS_GRENADE]: {
-        "x": 3064,
-        "y": 909
+        "x": 3060,
+        "y": 864
     },
     [WeaponType.HYPODERMIC]: {
-        "x": 3063,
-        "y": 1002
+        "x": 3059,
+        "y": 977
     },
     [WeaponType.KNIFE]: {
-        "x": 3062,
+        "x": 3057,
         "y": 1095
     },
     [WeaponType.POOL_STICK]: {
-        "x": 3061,
-        "y": 1188
+        "x": 3056,
+        "y": 1212
     },
     [WeaponType.CAN_OF_ROCKET_FUEL]: {
-        "x": 3060,
-        "y": 1281
+        "x": 3055,
+        "y": 1326
     },
     [WeaponType.STUN_PISTOL]: {
-        "x": 3059,
-        "y": 1374
+        "x": 3054,
+        "y": 1441
     },
     [WeaponType.WELDING_TORCH]: {
-        "x": 3058,
-        "y": 1467
+        "x": 3053,
+        "y": 1556
     }
 }
-
-// const buildWeaponDisplay = () => {
-//     console.log('building weapon display');
-//     const startX = 3069
-//     const startY = 397 + 47;
-//     const spacing = 490 - 397;
-//     const values = Object.values(weaponsDisplayTable);
-//     values.forEach((coord, index) => {
-//         coord.x = startX - index;
-//         coord.y = startY + index * spacing;
-//         console.log('setting weapon display coord', coord);
-//     });
-// }
 
 const updateCanvas = (canvas: HTMLCanvasElement, scale: number, currentAreaId: string | undefined, stackMap: StackMap, counterMap: CounterMap,
     areaDefinitionMap: AreaDefinitionMap, weaponsEffectMap: { [key: string]: WeaponEffectEntry }, selectedCounterIds: string[], animation?: Animation) => {
@@ -118,6 +90,11 @@ const updateCanvas = (canvas: HTMLCanvasElement, scale: number, currentAreaId: s
     console.log('drawing board');
     context.drawImage(board, 0, 0, boardWidth, boardHeight);
 
+    if (currentAreaId) {
+        const areaDefinition = areaDefinitionMap[currentAreaId];
+        renderCurrentArea(context, areaDefinition, scale);
+    }
+
     if (stackMap && counterMap && stackMap) {
         const areaIds = Object.keys(stackMap);
         areaIds.forEach((areaId: string) => {
@@ -130,12 +107,40 @@ const updateCanvas = (canvas: HTMLCanvasElement, scale: number, currentAreaId: s
         });
     }
 
+
+
     renderWeaponsDisplayTable(context, weaponsDisplayTable, weaponsEffectMap, scale);
 }
 
+const renderCurrentArea = (context: any, areaDefinition: AreaDefinition, scale: number) => {
+    //areaDefinition.polygon.forEach(point => {
+    //context.fillStyle = 'rgba(255, 0, 0, 0.5)';
+    //  context.fillRect(point.x * scale, point.y * scale, 10 * scale, 10 * scale);
+    //});
+    const polygon = areaDefinition.polygon;
+
+    context.beginPath();
+    context.moveTo(polygon[0].x * scale, polygon[0].y * scale);
+
+    for (const point of polygon.slice(1)) {
+        context.lineTo(point.x * scale, point.y * scale);
+    }
+
+    context.closePath();
+
+    // Transparent shading
+    context.fillStyle = "rgba(30, 144, 255, 0.35)";
+    context.fill();
+
+    // Optional outline
+    context.strokeStyle = "yellow";
+    context.setLineDash([5, 5]);
+    context.lineWidth = 3;
+    context.stroke();
+
+}
+
 const renderWeaponsDisplayTable = (context: any, weaponsDisplayTable: { [key: string]: Coord }, weaponsEffectMap: { [key: string]: WeaponEffectEntry }, scale: number) => {
-    console.log('rendering weapons display table');
-    console.log('weaponsDisplayTable', weaponsDisplayTable);
     const keys = Object.keys(weaponsEffectMap);
     keys.forEach(key => {
         const entry = weaponsEffectMap[key];
@@ -153,34 +158,34 @@ const renderWeaponsDisplayTable = (context: any, weaponsDisplayTable: { [key: st
 const renderWeaponsDisplayEntry = (context: any, coord: Coord, effect: WeaponEffect, scale: number) => {
     const image = ImageData[effect]?.image;
     if (image) {
-        const counterWidth = image.naturalWidth * scale * 0.9;
-        const counterHeight = image.naturalHeight * scale * 0.9;
+        const counterWidth = image.naturalWidth * scale * 1.1;
+        const counterHeight = image.naturalHeight * scale * 1.1;
         const x = coord!.x * scale - (counterWidth / 2);
         const y = coord!.y * scale - (counterHeight / 2);
-        console.log('drawing weapon effect', effect, x, y, counterWidth, counterHeight);
+        //console.log('drawing weapon effect', effect, x, y, counterWidth, counterHeight);
         context.drawImage(image, x, y, counterWidth, counterHeight);
     } else {
         console.log('no image for effect', effect);
     }
 }
 
-const drawPolygon = (context: any, polygon: Polygon, scale: number) => {
-    if (polygon === undefined || polygon.length < 3) {
-        return;
-    }
-    context.strokeStyle = `rgb(255, 0, 0)`;
-    context.lineWidth = 4;
-    context.beginPath();
-    context.moveTo(polygon[0].x * scale, polygon[0].y * scale);
+// const drawPolygon = (context: any, polygon: Polygon, scale: number) => {
+//     if (polygon === undefined || polygon.length < 3) {
+//         return;
+//     }
+//     context.strokeStyle = `rgb(255, 0, 0)`;
+//     context.lineWidth = 4;
+//     context.beginPath();
+//     context.moveTo(polygon[0].x * scale, polygon[0].y * scale);
 
-    for (let i = 1; i < polygon.length; ++i) {
-        context.lineTo(polygon[i].x * scale, polygon[i].y * scale);
-    }
+//     for (let i = 1; i < polygon.length; ++i) {
+//         context.lineTo(polygon[i].x * scale, polygon[i].y * scale);
+//     }
 
-    context.lineTo(polygon[0].x * scale, polygon[0].y * scale);
-    context.stroke();
-    context.closePath();
-}
+//     context.lineTo(polygon[0].x * scale, polygon[0].y * scale);
+//     context.stroke();
+//     context.closePath();
+// }
 
 const renderCounter = (context: any, scale: number, counter: Counter, coord: Coord, index: number, isSelected: boolean) => {
     const imageData = ImageData[counter.imageName];
@@ -216,7 +221,7 @@ const renderStack = (context: any, scale: number, counters: CounterMap, stack: S
     counterIds.forEach((counterId: string, index: number) => {
         const counter = counters[counterId];
         if (animation && animation.counterId === counterId) {
-            // TODO: render animation
+            // skip rendering this counter since it's being animated
             return;
         }
 
@@ -246,7 +251,7 @@ type AnimState = {
     duration: number
 }
 
-const animateCounter = (canvas: HTMLCanvasElement, scale: number, aninmationRef: React.RefObject<{ [key: string]: AnimState }>, runningRef: React.RefObject<boolean>, counterMap: CounterMap) => {
+const animateCounter = (canvas: HTMLCanvasElement, scale: number, aninmationRef: React.RefObject<{ [key: string]: AnimState }>, runningRef: React.RefObject<boolean>, counterMap: CounterMap, signalAnimationComplete: () => void) => {
     const context = canvas.getContext('2d');
     if (context && aninmationRef.current && runningRef.current) {
         const imageData = ImageData["map"];
@@ -266,6 +271,7 @@ const animateCounter = (canvas: HTMLCanvasElement, scale: number, aninmationRef:
 
         canvas.width = boardWidth;
         canvas.height = boardHeight;
+        context.clearRect(0, 0, canvas.width, canvas.height);
 
         let stillAnimating = false
         const animStates = Object.values(aninmationRef.current);
@@ -292,8 +298,10 @@ const animateCounter = (canvas: HTMLCanvasElement, scale: number, aninmationRef:
         });
 
         if (stillAnimating) {
-            requestAnimationFrame(() => animateCounter(canvas, scale, aninmationRef, runningRef, counterMap));
+            requestAnimationFrame(() => animateCounter(canvas, scale, aninmationRef, runningRef, counterMap, signalAnimationComplete));
         } else {
+            context.clearRect(0, 0, canvas.width, canvas.height);
+            signalAnimationComplete();
             runningRef.current = false;
         }
     }
@@ -304,6 +312,7 @@ const Map = () => {
 
     const animationsRef = useRef<{ [key: string]: AnimState }>({});
     const runningRef = useRef(false);
+    let clickTimer: NodeJS.Timeout | undefined = undefined;
 
     const selectedCounterIds = useAppSelector(state => state.selectedCounterIds);
     const currentAreaId = useAppSelector(state => state.currentAreaId);
@@ -353,15 +362,19 @@ const Map = () => {
         }
     }, [mainCanvasRef, counterMap, currentAreaId, mapScale, stackMap, areaDefinitionMap, selectedCounterIds, replay, weaponEffectMap]);
 
-    function startLoop(canvas: HTMLCanvasElement) {
+
+    const signalAnimationComplete = () => {
+        dispatch({ type: ActionType.CLEAR_REPLAY_ANIMATION })
+    }
+
+    const startLoop = (canvas: HTMLCanvasElement) => {
         console.log('startLoop');
         if (!runningRef.current && canvas) {
             console.log('starting loop');
             runningRef.current = true
-            //const canvas: HTMLCanvasElement = canvasRef.current;
             if (replay && replay.show && replay.activeState && animationsRef.current) {
                 console.log('animating counter');
-                requestAnimationFrame(() => animateCounter(canvas, mapScale, animationsRef, runningRef, replay.activeState!.counterMap));
+                requestAnimationFrame(() => animateCounter(canvas, mapScale, animationsRef, runningRef, replay.activeState!.counterMap, signalAnimationComplete));
             }
         }
     }
@@ -373,9 +386,28 @@ const Map = () => {
         const area = getArea(areaDefinitionMap, { x: posX / scale, y: posY / scale });
         console.log(`clicked on location: ${area ? area.id : 'not found'}`);
 
-        if (area !== undefined) {
-            dispatch({ type: ActionType.SELECT_AREA, payload: { areaId: area.id, clearSelectedCounterIds: true } });
+        if (area === undefined) {
+            return;
         }
+
+        if (clickTimer === undefined) {
+            clickTimer = setInterval(() => {
+                clearInterval(clickTimer);
+                clickTimer = undefined;
+                dispatch({ type: ActionType.SELECT_AREA, payload: { areaId: area.id, clearSelectedCounterIds: true, selectMode: SelectLocationMode.SINGLE } });
+            }, 300);
+        } else {
+            clearInterval(clickTimer);
+            clickTimer = undefined;
+            dispatch({ type: ActionType.SELECT_AREA, payload: { areaId: area.id, clearSelectedCounterIds: true, selectMode: SelectLocationMode.DOUBLE } });
+        }
+
+
+
+
+        // if (area !== undefined) {
+        //     dispatch({ type: ActionType.SELECT_AREA, payload: { areaId: area.id, clearSelectedCounterIds: true } });
+        // }
     }
 
     const handleRightClick = (event: React.MouseEvent, scale: number) => {
@@ -386,46 +418,85 @@ const Map = () => {
 
         const newArea = getArea(areaDefinitionMap, { x: posX / scale, y: posY / scale });
 
-        if (phase !== Phase.CREW_MOVE) {
-            dispatch({ type: ActionType.SET_STATUS_MESSAGE, payload: 'It is not the movement phase' });
+        if (phase !== Phase.CREW_MOVE && phase !== Phase.CREW_ATTACK) {
+            dispatch({ type: ActionType.SET_STATUS_MESSAGE, payload: 'It is not the movement or attack phase' });
             return;
         }
 
-        const validationError = validateMove(selectedCounterIds, currentAreaId, newArea?.id, areaDefinitionMap, counterMap, stackMap);
-        if (validationError) {
-            dispatch({ type: ActionType.SET_STATUS_MESSAGE, payload: validationError });
+        if (phase === Phase.CREW_ATTACK) {
+            const action: ActionSelectTargetArea = {
+                type: ActionType.SELECT_TARGET_AREA,
+                payload: {
+                    areaId: newArea!.id
+                }
+            };
+            dispatch(action);
             return;
-        }
-
-        const fromCoords = selectedCounterIds.map(counterId => {
-            const counter = counterMap[counterId];
-            return counter.coord!
-        });
-
-        const firstCounter = counterMap[selectedCounterIds[0]];
-        const engaged = (currentAreaId !== newArea!.id) ? checkEngagement(stackMap[newArea!.id], firstCounter.type, counterMap) : false;
-        const movementCost = getMovementCost(currentAreaId!, newArea!.id);
-        const moveToAction: ActionMoveToCoord = {
-            type: ActionType.MOVE_TO_COORD,
-            payload: {
-                counterIds: [...selectedCounterIds],
-                fromAreaId: currentAreaId!,
-                fromCoords: fromCoords,
-                toAreaId: newArea!.id,
-                toCoord: { x: posX / scale, y: posY / scale },
-                movementCost,
-                engaged: engaged
+        } else {
+            const validationError = validateMove(selectedCounterIds, currentAreaId, newArea?.id, areaDefinitionMap, counterMap, stackMap);
+            if (validationError) {
+                dispatch({ type: ActionType.SET_STATUS_MESSAGE, payload: validationError });
+                return;
             }
-        };
-        console.log(JSON.stringify(moveToAction));
-        putData(`api/games/${gameId}/action`, { socketId, action: moveToAction }).then((resp) => {
-            dispatch({ type: ActionType.SELECT_AREA, payload: { areaId: newArea?.id, clearSelectedCounterIds: false } });
-            dispatch(moveToAction);
-            // const addActionAction: ActionAddAction = { type: ActionType.ADD_ACTION, payload: { counterIds: selectedCounterIds, actionToAdd: moveToAction } };
-            // dispatch(addActionAction);
-        }).catch((resp) => {
-            dispatch({ type: ActionType.SET_STATUS_MESSAGE, payload: resp.message });
-        });
+
+            const fromCoords = selectedCounterIds.map(counterId => {
+                const counter = counterMap[counterId];
+                return counter.coord!
+            });
+
+            const firstCounter = counterMap[selectedCounterIds[0]];
+            const engaged = (currentAreaId !== newArea!.id) ? checkEngagement(stackMap[newArea!.id], firstCounter.type, counterMap) : false;
+            const movementCost = getMovementCost(currentAreaId!, newArea!.id);
+            const action: ActionMoveToCoord = {
+                type: ActionType.MOVE_TO_COORD,
+                payload: {
+                    counterIds: [...selectedCounterIds],
+                    fromAreaId: currentAreaId!,
+                    fromCoords: fromCoords,
+                    toAreaId: newArea!.id,
+                    toCoord: { x: posX / scale, y: posY / scale },
+                    movementCost,
+                    engaged: engaged
+                }
+            };
+            return;
+        } else {
+            const validationError = validateMove(selectedCounterIds, currentAreaId, newArea?.id, areaDefinitionMap, counterMap, stackMap);
+            if (validationError) {
+                dispatch({ type: ActionType.SET_STATUS_MESSAGE, payload: validationError });
+                return;
+            }
+
+            const fromCoords = selectedCounterIds.map(counterId => {
+                const counter = counterMap[counterId];
+                return counter.coord!
+            });
+
+            const firstCounter = counterMap[selectedCounterIds[0]];
+            const engaged = (currentAreaId !== newArea!.id) ? checkEngagement(stackMap[newArea!.id], firstCounter.type, counterMap) : false;
+            const movementCost = getMovementCost(currentAreaId!, newArea!.id);
+            const moveToAction: ActionMoveToCoord = {
+                type: ActionType.MOVE_TO_COORD,
+                payload: {
+                    counterIds: [...selectedCounterIds],
+                    fromAreaId: currentAreaId!,
+                    fromCoords: fromCoords,
+                    toAreaId: newArea!.id,
+                    toCoord: { x: posX / scale, y: posY / scale },
+                    movementCost,
+                    engaged: engaged
+                }
+            };
+            console.log(JSON.stringify(moveToAction));
+            putData(`api/games/${gameId}/action`, { socketId, action: moveToAction }).then((resp) => {
+                dispatch({ type: ActionType.SELECT_AREA, payload: { areaId: newArea?.id, clearSelectedCounterIds: false } });
+                dispatch(moveToAction);
+                // const addActionAction: ActionAddAction = { type: ActionType.ADD_ACTION, payload: { counterIds: selectedCounterIds, actionToAdd: moveToAction } };
+                // dispatch(addActionAction);
+            }).catch((resp) => {
+                dispatch({ type: ActionType.SET_STATUS_MESSAGE, payload: resp.message });
+            });
+        }
     }
 
     return (

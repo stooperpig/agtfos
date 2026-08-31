@@ -1,51 +1,46 @@
-import cloneDeep from "lodash.clonedeep";
-import { Action, ActionGrowMonster, ActionLayEgg, ActionMoveToCoord, ActionType } from "../shared/types/action-types";
-import { AttackGroup, AttackGroupType, Coord, Counter, CounterMap, CounterType, GameState, Phase, PlayerTurnStatus, Scenario, StackMap } from "../shared/types/game-types";
+import { ActionGrowMonster, ActionLayEgg, ActionMoveToCoord, ActionType } from "../shared/types/action-types";
+import { AttackGroup, AttackGroupType, Coord, Counter, CounterMap, CounterType, GameState, Phase, PlayerTurnStatus, ReplayMovementElement, Scenario, StackMap } from "../shared/types/game-types";
 import { isCrew, isMonster } from "../shared/utils/counter-utils";
 import { shuffleArray } from "../shared/utils/dice-utils";
 import { processGrowMonster, processLayEgg, processMoveToCoord } from "../shared/state/reducers/game-reducers";
 import { readDiceTable, readScenario } from "../utils/file-utils";
 import { DiceTableData } from "../types/server-types";
-// import { checkEngagement } from "../shared/utils/movement-utils";
 import { getMonsterImageName } from "../handlers/new-game-handler";
 import { getAdjacentAreas, getLosAreas, getShortestPath } from "../utils/map-utils";
 import { randomUUID } from "crypto";
+import { createReplay } from "../utils/game-utils";
+import { checkEngagement } from "../shared/utils/movement-utils";
 
-// function blockingSleep(ms: number) {
-//     const sab = new SharedArrayBuffer(4);
-//     const int32 = new Int32Array(sab);
-//     Atomics.wait(int32, 0, 0, ms);
-// }
+const removeKilledCounters = (gameState: GameState) => {
+    const killedCounters = Object.values(gameState.counterMap).filter(c => c.killed);
+    killedCounters.forEach(counter => {
+        console.log(`monsterMove: removing killed counter ${counter.id}`);
+        delete gameState.counterMap[counter.id];
+        const stack = counter.areaId ? gameState.stackMap[counter.areaId] : undefined;
+        if (stack) {
+            stack.counterIds = stack.counterIds.filter(counterId => counterId !== counter.id);
+        }
+    });
+}
 
 export const monsterMove = (data: any, postMessage: (data: any) => void): void => {
     try {
-        //const diceTable = readDiceTable(.8);
+        const diceTable = readDiceTable(.8);
 
-        // //you can mutate the gameState directly since it only exists in this thread
         const gameState = data as GameState;
-        // const scenario = readScenario(gameState.scenarioId);
+        const scenario = readScenario(gameState.scenarioId);
 
-        // console.log(`planMonsters: starting for game: ${data.id} phase: ${gameState.phase}`);
-
+        removeKilledCounters(gameState);
         resetCounters(gameState);
 
-        // //todo: eggs will not exist in the starting counterMap for replay??? need to handle this; they won't have actions but we need to represent them in the replay
-        // //todo: ok ok,  all these grow/laying egg things are actions for the counter.
+        const replay = createReplay(gameState);
+        const replayMovementElements = replay.replayElements.movementElements;
 
-        // if (gameState.phase === Phase.MOVE) {
-        //     handleGrow(gameState, scenario);
-        //     planMovementPhase(gameState, scenario, diceTable);
-        // } else {
-        //     planAttackPhase(gameState, scenario, diceTable);
-        // }
+        handleGrow(gameState, scenario, replayMovementElements);
+        handleMove(gameState, scenario, diceTable, replayMovementElements);
 
-        // const actionsMap: { [key: string]: Action[] } = {};
-        // Object.entries(gameState.counterMap).forEach(([counterId, counter]) => {
-        //     if (counter.actions.length > 0) {
-        //         actionsMap[counterId] = counter.actions;
-        //     }
-        // });
-        //gameState.attackGroups = [];
+        gameState.replay = replay;
+        gameState.replay.show = replay.replayElements.movementElements.length > 0;
         gameState.phase = Phase.MONSTER_MOVE_REPLAY;
         gameState.players.forEach(player => {
             player.turnStatus = PlayerTurnStatus.STARTED;
@@ -65,15 +60,13 @@ const resetCounters = (gameState: GameState) => {
     counters.forEach(counter => {
         if (isMonster(counter)) {
             counter.usedMovementAllowance = 0;
+            counter.attacking = false;
+            counter.engaged = false;
+        } else if (isCrew(counter)) {
             counter.stunned = false;
             counter.engaged = false;
         }
     });
-}
-
-const planAttackPhase = (gameState: GameState, scenario: Scenario, diceTable: DiceTableData): { [key: string]: Action[] } => {
-    console.log(`Planning monster attack phase for game ${gameState.id}`);
-    return {};
 }
 
 const scoreCrew = (crew: Counter, counterMap: CounterMap): number => {
@@ -87,7 +80,7 @@ const scoreCrew = (crew: Counter, counterMap: CounterMap): number => {
     return crew.attackDice / crew.constitution;
 }
 
-const planMovementPhase = (gameState: GameState, scenario: Scenario, diceTable: DiceTableData): void => {
+const handleMove = (gameState: GameState, scenario: Scenario, diceTable: DiceTableData, replayMovementElements: ReplayMovementElement[]): void => {
     console.log(`Planning monster movement phase for game ${gameState.id}`);
     const crewCounters = Object.values(gameState.counterMap).filter(counter => isCrew(counter));
     const monsterCounters = Object.values(gameState.counterMap).filter(counter => isMonster(counter));
@@ -104,6 +97,7 @@ const planMovementPhase = (gameState: GameState, scenario: Scenario, diceTable: 
             type: AttackGroupType.SINGLE_TARGET,
             targetCounterIds: [crewScore.crew.id],
             attackingCounterIds: [],
+            collateralCounterIds: [],
             dice: 0,
             goalDice: diceTable[crewScore.crew.constitution]
         };
@@ -125,42 +119,38 @@ const planMovementPhase = (gameState: GameState, scenario: Scenario, diceTable: 
             updateAttackGroup(attackGroup, losAreaId, gameState.counterMap, gameState.stackMap, 2);
         };
 
-        moveAttackingMonsters(attackGroup, areaId, gameState, scenario);
+        moveAttackingMonsters(attackGroup, areaId, gameState, scenario, replayMovementElements);
     });
 
     const remainingMonstersToMove = monsterCounters.filter(monster => !monster.stunned && !monster.attacking && monster.movementAllowance > 0);
     remainingMonstersToMove.forEach(monster => {
         console.log(`Monster ${monster.id} has ${monster.movementAllowance} movement allowance remaining`);
-        // if (monster.actions === undefined) {
-        //     monster.actions = [];
-        // }
 
         let fromAreaId = monster.areaId!;
         let fromCoord = monster.coord!;
 
         //look in adjacent areas (adj)
         const adjAreas = getAdjacentAreas(monster.areaId!, scenario.board.areaDefinitionMap);
-        let done = moveMonsterTowardsCrew(monster, adjAreas, fromAreaId!, fromCoord, scenario, gameState.counterMap, gameState.stackMap);
+        let done = moveMonsterTowardsCrew(gameState, monster, adjAreas, fromAreaId!, fromCoord, scenario, gameState.counterMap, gameState.stackMap, replayMovementElements);
 
         if (done) {
             return;
         }
 
-
         //look at los areas
         const losAreas = getLosAreas(monster.areaId!, scenario.board.areaDefinitionMap);
-        done = moveMonsterTowardsCrew(monster, losAreas, fromAreaId!, fromCoord, scenario, gameState.counterMap, gameState.stackMap);
+        done = moveMonsterTowardsCrew(gameState, monster, losAreas, fromAreaId!, fromCoord, scenario, gameState.counterMap, gameState.stackMap, replayMovementElements);
 
         if (done) {
             return;
         }
 
         //random walk
-        randomMoveMonster(monster, fromAreaId!, fromCoord, scenario);
+        randomMoveMonster(gameState, monster, fromAreaId!, fromCoord, scenario, replayMovementElements);
     });
 }
 
-const moveMonsterTowardsCrew = (monster: Counter, areaIds: string[], fromAreaId: string, fromCoord: Coord, scenario: Scenario, counterMap: CounterMap, stackMap: StackMap): boolean => {
+const moveMonsterTowardsCrew = (gameState: GameState, monster: Counter, areaIds: string[], fromAreaId: string, fromCoord: Coord, scenario: Scenario, counterMap: CounterMap, stackMap: StackMap, replayMovementElements: ReplayMovementElement[]): boolean => {
     console.log(`Moving monster ${monster.id} towards crew`);
     let done = false;
     const shuffledAreaIds = shuffleArray(areaIds);
@@ -175,7 +165,7 @@ const moveMonsterTowardsCrew = (monster: Counter, areaIds: string[], fromAreaId:
         const containsCrew = stack.counterIds.some(counterId => counterMap[counterId].type === CounterType.CREW);
         if (containsCrew) {
             console.log(`Found crew in area ${areaId}`);
-            moveMonsterToArea(monster, areaId, scenario);
+            moveMonsterToArea(gameState, monster, areaId, scenario, replayMovementElements);
             done = true;
         }
     };
@@ -183,7 +173,7 @@ const moveMonsterTowardsCrew = (monster: Counter, areaIds: string[], fromAreaId:
     return done;
 }
 
-const moveMonsterToArea = (monster: Counter, areaId: string, scenario: Scenario) => {
+const moveMonsterToArea = (gameState: GameState, monster: Counter, areaId: string, scenario: Scenario, replayMovementElements: ReplayMovementElement[]) => {
     console.log(`Moving monster ${monster.id} to area ${areaId}`);
     if (monster.areaId !== areaId) {
         const path = getShortestPath(scenario.board.areaDefinitionMap, monster.areaId!, areaId);
@@ -194,13 +184,9 @@ const moveMonsterToArea = (monster: Counter, areaId: string, scenario: Scenario)
 
         console.log(`Monster ${monster.id} is in area ${monster.areaId}, path to ${areaId}:`, JSON.stringify(path));
 
-        // if (monster.actions === undefined) {
-        //     monster.actions = [];
-        // }
-
         let fromAreaId = monster.areaId!;
         let fromCoord = monster.coord!;
-        for (let i = 1; i < path.length && monster.movementAllowance >= i; i++) {
+        for (let i = 1; i < path.length && monster.movementAllowance >= i && !monster.engaged; i++) {
             const toAreaId = path[i];
             console.log(`Monster ${monster.id} will move to area ${fromAreaId} from ${toAreaId}`);
             const toArea = scenario.board.areaDefinitionMap[toAreaId];
@@ -214,21 +200,38 @@ const moveMonsterToArea = (monster: Counter, areaId: string, scenario: Scenario)
                     toAreaId,
                     toCoord,
                     movementCost: 1,
-                    engaged: false
+                    engaged: checkEngagement(gameState.stackMap[toAreaId], monster.type, gameState.counterMap)
                 }
             };
-            //monster.actions.push(action);
+
+            processMoveToCoord(gameState, action);
+
+            const replayMovementElement: ReplayMovementElement = {
+                type: ActionType.MOVE_TO_COORD,
+                counterId: monster.id,
+                fromAreaId: fromAreaId!,
+                fromCoord: fromCoord,
+                toAreaId: toAreaId,
+                toCoord: toCoord,
+                movementCost: 1,
+                engaged: action.payload.engaged,
+                spottedData: {}
+            };
+            replayMovementElements.push(replayMovementElement);
+
+            fromAreaId = monster.areaId!;
+            fromCoord = monster.coord!;
         }
     } else {
         console.log(`Monster ${monster.id} is already in area ${areaId}`);
     }
 }
 
-const randomMoveMonster = (monster: Counter, fromAreaId: string, fromCoord: Coord, scenario: Scenario) => {
+const randomMoveMonster = (gameState: GameState, monster: Counter, fromAreaId: string, fromCoord: Coord, scenario: Scenario, replayMovementElements: ReplayMovementElement[]) => {
     console.log(`Randomly moving monster ${monster.id}`);
     const visited = new Set<string>();
     visited.add(fromAreaId!);
-    for (let i = 0; i < monster.movementAllowance; i++) {
+    for (let i = 0; i < monster.movementAllowance && !monster.engaged; i++) {
         const fromArea = scenario.board.areaDefinitionMap[fromAreaId];
         const apertures = fromArea.apertures.filter(aperture => !visited.has(aperture.areaId));
         if (apertures.length === 0) {
@@ -246,22 +249,36 @@ const randomMoveMonster = (monster: Counter, fromAreaId: string, fromCoord: Coor
                 toAreaId,
                 toCoord,
                 movementCost: 1,
-                engaged: false
+                engaged: checkEngagement(gameState.stackMap[toAreaId], monster.type, gameState.counterMap)
             }
         };
-        //monster.actions.push(action);
+
+        processMoveToCoord(gameState, action);
+
+        const replayMovementElement: ReplayMovementElement = {
+            type: ActionType.MOVE_TO_COORD,
+            counterId: monster.id,
+            fromAreaId: fromAreaId!,
+            fromCoord: fromCoord,
+            toAreaId: toAreaId,
+            toCoord: toCoord,
+            movementCost: 1,
+            engaged: action.payload.engaged,
+            spottedData: {}
+        };
+        replayMovementElements.push(replayMovementElement);
+
         fromAreaId = toAreaId;
         fromCoord = toCoord;
         visited.add(toAreaId);
     }
 }
 
-const moveAttackingMonsters = (attackGroup: AttackGroup, areaId: string, gameState: GameState, scenario: Scenario) => {
+const moveAttackingMonsters = (attackGroup: AttackGroup, areaId: string, gameState: GameState, scenario: Scenario, replayMovementElements: ReplayMovementElement[]) => {
     attackGroup.attackingCounterIds.forEach(counterId => {
         console.log(`Monster ${counterId} is attacking crew ${attackGroup.targetCounterIds}`);
         const monsterCounter = gameState.counterMap[counterId];
-        const monsterAreaId = monsterCounter.areaId;
-        moveMonsterToArea(monsterCounter, areaId, scenario);
+        moveMonsterToArea(gameState, monsterCounter, areaId, scenario, replayMovementElements);
     });
 }
 
@@ -296,7 +313,7 @@ const updateAttackGroup = (attackGroup: AttackGroup, areaId: string, counterMap:
     }
 }
 
-const handleGrow = (gameState: GameState, scenario: Scenario): void => {
+const handleGrow = (gameState: GameState, scenario: Scenario, replayMovementElements: ReplayMovementElement[]): void => {
     console.log(`Handling monster grow for game ${gameState.id}`);
     const monsterCounters = Object.values(gameState.counterMap).filter(counter => isMonster(counter));
     const eggPotential = calculateGrowthPotential(monsterCounters, [CounterType.EGG, CounterType.FRAGMENT], CounterType.BABY, scenario.monsterSettings.monsterMaxMap[CounterType.BABY]);
@@ -304,15 +321,15 @@ const handleGrow = (gameState: GameState, scenario: Scenario): void => {
     const adultPotential = calculateGrowthPotential(monsterCounters, [CounterType.ADULT], CounterType.EGG, scenario.monsterSettings.monsterMaxMap[CounterType.EGG]);
     console.log(`Growth potential: egg:${eggPotential}, baby:${babyPotential}, adult:${adultPotential}`);
     if (eggPotential >= babyPotential && eggPotential >= adultPotential) {
-        growType(gameState, [CounterType.EGG, CounterType.FRAGMENT], CounterType.BABY, eggPotential, scenario);
+        growType(gameState, [CounterType.EGG, CounterType.FRAGMENT], CounterType.BABY, eggPotential, scenario, replayMovementElements);
     } else if (babyPotential >= babyPotential && babyPotential >= adultPotential) {
-        growType(gameState, [CounterType.BABY], CounterType.ADULT, babyPotential, scenario);
+        growType(gameState, [CounterType.BABY], CounterType.ADULT, babyPotential, scenario, replayMovementElements);
     } else {
-        gameState.nextCounterId = addEggs(gameState, adultPotential, scenario, gameState.nextCounterId);
+        gameState.nextCounterId = addEggs(gameState, adultPotential, scenario, gameState.nextCounterId, replayMovementElements);
     }
 }
 
-const addEggs = (gameState: GameState, addCount: number, scenario: Scenario, startingId: number): number => {
+const addEggs = (gameState: GameState, addCount: number, scenario: Scenario, startingId: number, replayMovementElements: ReplayMovementElement[]): number => {
     console.log(`Adding ${addCount} eggs`);
     const effectCounters = Object.values(gameState.counterMap).filter(counter => counter.type === CounterType.ADULT);
     const monsterTypeData = scenario.monsterSettings.monsterPropertyMap[CounterType.EGG];
@@ -335,14 +352,33 @@ const addEggs = (gameState: GameState, addCount: number, scenario: Scenario, sta
                 imageName: getMonsterImageName(startingId, CounterType.EGG, scenario.monsterSettings.monsterImageCountMap[CounterType.EGG])
             }
         };
+
         processLayEgg(gameState, action);
-        //effectCounters[i].actions.push(action);
+
+        const replayElement: ReplayMovementElement = {
+            type: ActionType.LAY_EGG,
+            counterId: action.payload.counterId,
+            fromAreaId: action.payload.fromAreaId,
+            fromCoord: action.payload.fromCoord,
+            toAreaId: undefined,
+            toCoord: undefined,
+            movementCost: 0,
+            nextType: CounterType.EGG,
+            newCounterId: action.payload.newCounterId,
+            movementAllowance: action.payload.movementAllowance,
+            attackDice: action.payload.attackDice,
+            constitution: action.payload.constitution,
+            imageName: action.payload.imageName,
+            engaged: false,
+            spottedData: {}
+        };
+        replayMovementElements.push(replayElement);
     }
 
     return startingId;
 }
 
-const growType = (gameState: GameState, currentTypes: CounterType[], nextType: CounterType, growCount: number, scenario: Scenario): void => {
+const growType = (gameState: GameState, currentTypes: CounterType[], nextType: CounterType, growCount: number, scenario: Scenario, replayMovementElements: ReplayMovementElement[]): void => {
     console.log(`Growing ${currentTypes} to ${nextType}`);
     const effectCounters = Object.values(gameState.counterMap).filter(counter => currentTypes.includes(counter.type));
     const monsterTypeData = scenario.monsterSettings.monsterPropertyMap[nextType];
@@ -363,15 +399,40 @@ const growType = (gameState: GameState, currentTypes: CounterType[], nextType: C
                 imageName: getMonsterImageName(parseInt(shuffledEffectCounters[i].id), nextType, scenario.monsterSettings.monsterImageCountMap[nextType])
             }
         };
+
         processGrowMonster(gameState, action);
+
+        const replayElement: ReplayMovementElement = {
+            type: ActionType.GROW_MONSTER,
+            counterId: action.payload.counterId,
+            fromAreaId: action.payload.fromAreaId,
+            fromCoord: action.payload.fromCoord,
+            toAreaId: undefined,
+            toCoord: undefined,
+            movementCost: 0,
+            nextType: action.payload.nextType,
+            newCounterId: undefined,
+            movementAllowance: action.payload.movementAllowance,
+            attackDice: action.payload.attackDice,
+            constitution: action.payload.constitution,
+            imageName: action.payload.imageName,
+            engaged: false,
+            spottedData: {}
+        };
+        replayMovementElements.push(replayElement);
     }
 }
 
 const calculateGrowthPotential = (counters: Counter[], currentTypes: CounterType[], nextType: CounterType, maxNextType: number): number => {
     const currentCount = counters.reduce((acc, counter) => {
+        if (counter.stunned) {
+            return acc;
+        }
+
         if (currentTypes.includes(counter.type)) {
             acc++;
         }
+
         return acc;
     }, 0);
 

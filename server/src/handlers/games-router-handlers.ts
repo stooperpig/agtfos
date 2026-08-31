@@ -1,7 +1,7 @@
 import { randomUUID } from "crypto";
 import { addGame, flush, markDirty, retrieveGame } from "../cache/game-cache";
-import { processAddCounterToAttackGroup, processCreateAttackGroup, processDeleteAttackGroup, processDropWeapon, processGrabWeapon, processGrowMonster, processLayEgg, processMoveToCoord, processNextPhase, processPhaseComplete, processRemoveCounterFromAttackGroup } from "../shared/state/reducers/game-reducers";
-import { Action, ActionAddCountersToAttackGroup, ActionCreateAttackGroup, ActionDeleteAttackGroup, ActionDropWeapon, ActionGrabWeapon, ActionGrowMonster, ActionLayEgg, ActionMoveToCoord, ActionNextPhase, ActionPhaseComplete, ActionRefreshGame, ActionRemoveCounterFromAttackGroup, ActionType } from "../shared/types/action-types";
+import { processAddCountersToAttackGroup, processCreateAttackGroup, processDeleteAttackGroup, processDropWeapon, processGrabWeapon, processGrowMonster, processLayEgg, processMoveToCoord, processNextPhase, processPhaseComplete, processRemoveCountersFromAttackGroup } from "../shared/state/reducers/game-reducers";
+import { Action, ActionAddCountersToAttackGroup, ActionCreateAttackGroup, ActionDeleteAttackGroup, ActionDropWeapon, ActionGrabWeapon, ActionGrowMonster, ActionLayEgg, ActionMoveToCoord, ActionNextPhase, ActionPhaseComplete, ActionRefreshGame, ActionRemoveCountersFromAttackGroup, ActionType } from "../shared/types/action-types";
 import { GameState, Phase, PlayerTurnStatus } from "../shared/types/game-types";
 import { actionValidators } from "../state/action-validators";
 import { TaskIds } from "../tasks/tasks";
@@ -9,6 +9,7 @@ import { Task, TaskType } from "../types/server-types";
 import { pushAction } from "../utils/push-actions";
 import { startTask } from "../workers/async-task-queue";
 import { isCrew, isMonster } from "../shared/utils/counter-utils";
+import { readGameList, writeGames } from "../utils/file-utils";
 
 export const handlePhase = (gameId: string, socketId: string, action: Action): string | undefined => {
     console.log("handlePhase: ", action);
@@ -34,6 +35,7 @@ export const handlePhase = (gameId: string, socketId: string, action: Action): s
 
         let nextPhase: Phase = Phase.GRAB_WEAPON;
         let playerStatus = PlayerTurnStatus.STARTED;
+        let refreshClientsNow = false;
 
         switch (state.phase) {
             case Phase.GRAB_WEAPON:
@@ -45,12 +47,18 @@ export const handlePhase = (gameId: string, socketId: string, action: Action): s
             case Phase.CREW_ATTACK:
                 nextPhase = Phase.CREW_ATTACK_REPLAY;
                 playerStatus = PlayerTurnStatus.FINISHED;
-                handleTask(state, 'handlCrewAttack', TaskIds.CREW_ATTACK);
+                handleTask(state, 'handleCrewAttack', TaskIds.CREW_ATTACK);
                 break;
             case Phase.CREW_ATTACK_REPLAY:
+                Object.values(state.counterMap).forEach(counter => {
+                    if (isCrew(counter)) {
+                        counter.stunned = counter.collaterallyStunned || false;
+                        counter.collaterallyStunned = false;
+                    }
+                });
                 nextPhase = Phase.MONSTER_MOVE;
                 playerStatus = PlayerTurnStatus.FINISHED;
-                handleTask(state, 'handleMonsterMove', TaskIds.MONSTER_MOVE);
+                handleTask(state, 'handleMonsterMove', TaskIds.MONSTER_MOVE); //need to handle case where crew was previously stunned by monster so needs to be cleared vs stunned by crew just now
                 break;
             case Phase.MONSTER_MOVE:
                 nextPhase = Phase.MONSTER_MOVE_REPLAY;
@@ -61,9 +69,17 @@ export const handlePhase = (gameId: string, socketId: string, action: Action): s
                 handleTask(state, 'handleMonsterAttack', TaskIds.MONSTER_ATTACK);
                 break;
             case Phase.MONSTER_ATTACK:
+                playerStatus = PlayerTurnStatus.FINISHED;
                 nextPhase = Phase.MONSTER_ATTACK_REPLAY;
                 break;
             case Phase.MONSTER_ATTACK_REPLAY:
+                Object.values(state.counterMap).forEach(counter => {
+                    if (isMonster(counter)) {
+                        counter.stunned = false;
+                    }
+                });
+                refreshClientsNow = true;
+                state.replay = undefined;
                 nextPhase = Phase.GRAB_WEAPON;
                 break;
         }
@@ -76,12 +92,25 @@ export const handlePhase = (gameId: string, socketId: string, action: Action): s
             },
         };
 
+        const turn = state.turn;
         processNextPhase(state, nextPhaseAction);
+        if (state.turn !== turn) {
+            updateGameList(gameId, state.turn);
+        }
 
         console.log("Push next phase action:", nextPhaseAction);
         pushAction(JSON.stringify(nextPhaseAction));
 
         markDirty(gameId);
+
+        if (refreshClientsNow) {
+            const action = {
+                type: "REFRESH_GAME",
+                payload: true
+            };
+
+            pushAction(JSON.stringify(action));
+        }
     } else {
         markDirty(gameId);
     }
@@ -94,8 +123,17 @@ export const handlePhase = (gameId: string, socketId: string, action: Action): s
     return undefined;
 }
 
+export const updateGameList = (gameId: String, turn: number) => {
+    const games = readGameList();
+    const game = games.games.find(gameEntry => gameEntry.id == gameId);
+    if (game) {
+        game.turn = turn;
+        writeGames(games)
+    }
+}
+
 export const handleTask = (state: GameState, label: string, taskId: TaskType) => {
-     const task: Task = {
+    const task: Task = {
         payload: state,
         type: taskId,
         callBack: (msg: any) => {
@@ -135,13 +173,13 @@ export const handleAttackGroup = (gameId: string, socketId: string, action: Acti
         case ActionType.ADD_COUNTERS_TO_ATTACK_GROUP:
             //todo: need validation (like does group still exist, and counter is not already in a group)
             const addCounterToAttackGroupAction: ActionAddCountersToAttackGroup = action as ActionAddCountersToAttackGroup;
-            processAddCounterToAttackGroup(state, addCounterToAttackGroupAction);
+            processAddCountersToAttackGroup(state, addCounterToAttackGroupAction);
             pushAction(JSON.stringify(action), socketId);
             break;
-        case ActionType.REMOVE_COUNTER_FROM_ATTACK_GROUP:
+        case ActionType.REMOVE_COUNTERS_FROM_ATTACK_GROUP:
             //todo: need validation (like does group still exist, and counter is the group)
-            const removeCounterFromAttackGroupAction: ActionRemoveCounterFromAttackGroup = action as ActionRemoveCounterFromAttackGroup;
-            processRemoveCounterFromAttackGroup(state, removeCounterFromAttackGroupAction);
+            const removeCounterFromAttackGroupAction: ActionRemoveCountersFromAttackGroup = action as ActionRemoveCountersFromAttackGroup;
+            processRemoveCountersFromAttackGroup(state, removeCounterFromAttackGroupAction);
             pushAction(JSON.stringify(action), socketId);
             break;
         case ActionType.DELETE_ATTACK_GROUP:

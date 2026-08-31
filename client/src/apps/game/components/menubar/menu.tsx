@@ -3,10 +3,21 @@ import './menu.css';
 import './drop-down-menu.css';
 import DropdownMenu from './drop-down-menu';
 import { useAppDispatch, useAppSelector } from '../../../../constants/store';
-import { GameState, Replay } from '../../../../shared/types/game-types';
+import { GameState, Phase, Replay } from '../../../../shared/types/game-types';
 import { getData, putData } from '../../../../api/api-utils';
 import { socketId } from '../../../../api/web-socket';
 import { ActionPhaseComplete, ActionRefreshReplay, ActionReplayShow, ActionSetStatusMessage, ActionType } from '../../../../shared/types/action-types';
+
+const phaseLabels: Record<Phase, string> = {
+    [Phase.GRAB_WEAPON]: 'Grab Weapon',
+    [Phase.CREW_MOVE]: 'Crew Move',
+    [Phase.CREW_ATTACK]: 'Crew Attack Plan',
+    [Phase.CREW_ATTACK_REPLAY]: 'Crew Attack Replay',
+    [Phase.MONSTER_ATTACK]: 'Monster Attack',
+    [Phase.MONSTER_ATTACK_REPLAY]: 'Monster Attack Replay',
+    [Phase.MONSTER_MOVE]: 'Monster Move',
+    [Phase.MONSTER_MOVE_REPLAY]: 'Monster Move Replay'
+};
 
 const Menu = () => {
     const dispatch = useAppDispatch();
@@ -40,23 +51,33 @@ const Menu = () => {
         title: replay?.show ? `Hide Replay ${replay.show}` : `Show Replay (${replay?.show})`,
         subItems: [],
         handler: () => {
-            if (replay === undefined) {
-                getData(`/api/games/${gameId}/replay`).then((resp) => {
-                    const refreshAction: ActionRefreshReplay = { type: ActionType.REFRESH_REPLAY, payload: resp as Replay };
-                    dispatch(refreshAction);
-                    const replayShowAction: ActionReplayShow = { type: ActionType.REPLAY_SHOW, payload: true }
-                    dispatch(replayShowAction);
-                }).catch((resp) => {
-                    const action: ActionSetStatusMessage = { type: ActionType.SET_STATUS_MESSAGE, payload: resp.message }
-                    dispatch(action);
-                });
+            // if (replay === undefined) {
+            //     getData(`/api/games/${gameId}/replay`).then((resp) => {
+            //         // const refreshAction: ActionRefreshReplay = { type: ActionType.REFRESH_REPLAY, payload: resp as Replay };
+            //         // dispatch(refreshAction);
+            //         const replayShowAction: ActionReplayShow = { type: ActionType.REPLAY_SHOW, payload: true }
+            //         dispatch(replayShowAction);
+            //     }).catch((resp) => {
+            //         const action: ActionSetStatusMessage = { type: ActionType.SET_STATUS_MESSAGE, payload: resp.message }
+            //         dispatch(action);
+            //     });
 
-            } else {
+            // } else {
                 const action: ActionReplayShow = { type: ActionType.REPLAY_SHOW, payload: replay?.show ? false : true }
                 dispatch(action);
-            }
+           // }
         }
     };
+
+    const renderReplayMenu = () => {
+        if (replay === undefined) {
+            return null;
+        }
+        
+        return (
+            <DropdownMenu menuItem={replayMenu} />
+        )
+    }
 
     // const renderReplayMenu = () => {
     //     if (replay !== undefined && replay.replayElements !== undefined && (replay.replayElements.movementElements.length > 0 || replay?.replayElements.attackElements.length > 0)) {
@@ -74,9 +95,9 @@ const Menu = () => {
     return (
         <div className="menu">
             <DropdownMenu menuItem={gameMenu} />
-            <DropdownMenu menuItem={replayMenu} />
+            {renderReplayMenu()}
             <div className="menu-right-child">
-                <span className="menu-phase">{capitalize(phase)} Phase</span>
+                <span className="menu-phase">{phaseLabels[phase]} Phase</span>
             </div>
         </div>
     );

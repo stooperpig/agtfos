@@ -1,6 +1,6 @@
 import express, { Request, Response } from 'express';
 import { deleteGame, deleteReplay, doesGameExist, readGame, readGameList, readGames, readReplay, readScenario, writeGames, writeReplay } from '../utils/file-utils';
-import { GameEntry, GameStatus, NewGamePlayer, Phase } from '../shared/types/game-types';
+import { GameEntry, GameState, GameStatus, NewGamePlayer, Phase } from '../shared/types/game-types';
 import { addGame, markDirty, retrieveGame } from '../cache/game-cache';
 import { pushAction } from '../utils/push-actions';
 import { createNewGame } from '../handlers/new-game-handler';
@@ -49,10 +49,13 @@ router.get('/:gameId/replay', (req: Request, res: Response) => {
     }
 });
 
-router.get('/:gameId/player/:playerId', (req: Request, res: Response) => {
-    try {
+const getGame = (req: Request, res: Response) => {
+        try {
         const gameId = req.params.gameId;
         const playerId = req.params.playerId;
+        const versionId = req.params.versionId;
+
+        console.log(`getGame: ${gameId}-${playerId}-${versionId}`);
 
         if (gameId === undefined) {
             res.status(500);
@@ -61,7 +64,19 @@ router.get('/:gameId/player/:playerId', (req: Request, res: Response) => {
             res.status(500);
             res.send({ message: 'Error: playerId is required part of uri' });
         } else {
-            const game = retrieveGame(gameId);
+            let game: GameState;
+            if (versionId !== undefined) {
+                if (versionId == "latest") {
+                    game = readGame(gameId);
+                    addGame(gameId, game);
+                } else {
+                    game = readGame(gameId, versionId);
+                    addGame(gameId, game);
+                }
+            } else {
+                game = retrieveGame(gameId);
+            }
+
             game.currentPlayerId = playerId;
 
             const player = game.players.find(player => player.id === playerId);
@@ -79,7 +94,10 @@ router.get('/:gameId/player/:playerId', (req: Request, res: Response) => {
         res.status(500);
         res.send({ message: 'Error: Retreiving game failed' });
     }
-})
+}
+
+router.get('/:gameId/player/:playerId/version/:versionId', getGame);
+router.get('/:gameId/player/:playerId', getGame);
 
 router.put('/:gameId/phase', async function (req: Request, res: Response) {
     try {

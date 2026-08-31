@@ -4,17 +4,18 @@ import { GameState } from "../shared/types/game-types";
 import {
     processDropWeapon,
     processGrabWeapon,
-    processMoveToCoord, processRefreshGame, processSelectCounter, processSelectArea, processSetStatusMessage, processUpdateClientCount,
+    processMoveToCoord, processRefreshGame, processSelectCounter, processSelectArea, processSelectTargetArea, processSetStatusMessage, processUpdateClientCount,
     processDeselectCounter, processPhaseComplete,
     processNextPhase,
     processCreateAttackGroup,
-    processRemoveCounterFromAttackGroup,
-    processAddCounterToAttackGroup,
+    processRemoveCountersFromAttackGroup,
+    processAddCountersToAttackGroup,
     processDeleteAttackGroup,
-} from "../shared/state/reducers/game-reducers";
+    processLoadGame,
+    } from "../shared/state/reducers/game-reducers";
 
 import { produce } from "immer";
-import { processRefreshReplay, processReplayEnd, processReplayPause, processReplayPlay, processReplaySetShow, processReplayStart, processReplayStepBackward, processReplayStepForward } from "./reducers/replay-reducers";
+import { processRefreshReplay, processClearAnimation, processReplayEnd, processReplayPause, processReplayPlay, processReplaySetShow, processReplayStart, processReplayStepBackward, processReplayStepForward } from "./reducers/replay-reducers";
 import { Action, ActionType } from "../shared/types/action-types";
 
 export const rootReducer = (state = InitialGameState, action: Action): GameState => {
@@ -28,7 +29,7 @@ export const rootReducer = (state = InitialGameState, action: Action): GameState
         case ActionType.DROP_WEAPON:
             return reduce(state, action, processDropWeapon);
         case ActionType.LOAD_GAME:
-            return action.payload;
+            return processLoadGame(state, action.payload); //this replaces current state with action payload
         case ActionType.UPDATE_CONNECTED_CLIENT_COUNT:
             return reduce(state, action, processUpdateClientCount);
         case ActionType.REFRESH_GAME:
@@ -37,6 +38,8 @@ export const rootReducer = (state = InitialGameState, action: Action): GameState
             return reduce(state, action, processSelectCounter);
         case ActionType.SELECT_AREA:
             return reduce(state, action, processSelectArea);
+        case ActionType.SELECT_TARGET_AREA:
+            return reduce(state, action, processSelectTargetArea);
         case ActionType.MOVE_TO_COORD:
             return reduce(state, action, processMoveToCoord);
         case ActionType.SET_STATUS_MESSAGE:
@@ -57,14 +60,16 @@ export const rootReducer = (state = InitialGameState, action: Action): GameState
             return reduce(state, action, processReplayEnd);
         case ActionType.REFRESH_REPLAY:
             return reduce(state, action, processRefreshReplay);
+        case ActionType.CLEAR_REPLAY_ANIMATION:
+            return reduce(state, action, processClearAnimation);
         case ActionType.NEXT_PHASE:
             return reduce(state, action, processNextPhase);
         case ActionType.CREATE_ATTACK_GROUP:
             return reduce(state, action, processCreateAttackGroup);
-        case ActionType.REMOVE_COUNTER_FROM_ATTACK_GROUP:
-            return reduce(state, action, processRemoveCounterFromAttackGroup);
+        case ActionType.REMOVE_COUNTERS_FROM_ATTACK_GROUP:
+            return reduce(state, action, processRemoveCountersFromAttackGroup);
         case ActionType.ADD_COUNTERS_TO_ATTACK_GROUP:
-            return reduce(state, action, processAddCounterToAttackGroup);
+            return reduce(state, action, processAddCountersToAttackGroup);
         case ActionType.DELETE_ATTACK_GROUP:
             return reduce(state, action, processDeleteAttackGroup);
         default:
